@@ -9,12 +9,20 @@
 Blah..
 
 ### SANNET Application
+This application should be dynamic in nature, in that it should change the indicator input weights. 
+
+<b>Independent Variables</b>:
+* x: # of days worth of data for training NN
+* y: # of days worth of data for testing NN accuracy
+
 The SANNET Application should perform the following items:
 1. Determine which stocks should be included in the analysis (database table with company and flag?)
 1. Construct & train Neural Network (NN) for EACH company
-  * Blah
-  * Blah2
-1. Store or display results.
+ * Compute and collect inputs/indicators
+ * Train NN with (x) days worth of data
+ * Run simulation on (y) days worth of data to figure out accuracy of NN model
+ * Apply latest quote to model to get expected outcome for latest quote
+1. Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
 ### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
