@@ -5,11 +5,16 @@
 - [ ] Stock Analysis Neural Network (SANNET) Application
 - [ ] SANNET.DataModel Library
 
-### SANNET Application
-- Inputs: none
-- Outputs: Probabilities of EACH stock that it will increase
+### NeuralNetwork.Generic
+Blah..
 
-The program should take a look at the database and see which stocks are 'marked' to be included in the analysis. After that, 
+### SANNET Application
+The SANNET Application should perform the following items:
+1. Determine which stocks should be included in the analysis (database table with company and flag?)
+1. Construct & train Neural Network (NN) for EACH company
+  * Blah
+  * Blah2
+1. Store or display results.
 
 ### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
