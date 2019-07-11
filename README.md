@@ -9,7 +9,7 @@
 Blah..
 
 ### SANNET Application
-This application should be dynamic in nature, in that it should change the indicator input weights. 
+This application should be dynamic in nature and should store or display the expected outcome for each company with a probability that it will occur. The application <i>may</i> create multiple NNs for each company; one NN for each potential trading strategy.
 
 <b>Independent Variables</b>:
 * x: # of days worth of data for training NN
@@ -17,7 +17,7 @@ This application should be dynamic in nature, in that it should change the indic
 
 The SANNET Application should perform the following items:
 - [ ] Determine which stocks should be included in the analysis (database table with company and flag?)
-- [ ] Construct & train Neural Network (NN) for EACH company
+- [ ] Construct & train Neural Network (NN) for EACH company (Possibly multiple NNs)
     * Compute and collect inputs/indicators
     * Train NN with (x) days worth of data
     * Run simulation on (y) days worth of data to figure out accuracy of NN model
@@ -28,7 +28,8 @@ The SANNET Application should perform the following items:
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
 
 #### Tables
-Neural net stuff?
+NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)
+CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 #### Stored Procedures
 - [ ] Technical Indicator Stored Procedure (needs companyId and indicator value arguments)
