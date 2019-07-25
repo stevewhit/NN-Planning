@@ -1,0 +1,16 @@
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\bin\Release\SM.dll
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\bin\Release\SM.pdb
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\obj\Release\SM.csproj.CoreCompileInputs.cache
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\obj\Release\SM.dll
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\obj\Release\SM.pdb
+D:\Data\Personal\Software\Development\Local\NN\nn_app\SM\obj\Release\SM.csprojResolveAssemblyReference.cache
+E:\NN_2018_02_01\nn_app\SM\bin\Release\SM.dll
+E:\NN_2018_02_01\nn_app\SM\bin\Release\SM.pdb
+E:\NN_2018_02_01\nn_app\SM\obj\Release\SM.csprojResolveAssemblyReference.cache
+E:\NN_2018_02_01\nn_app\SM\obj\Release\SM.dll
+E:\NN_2018_02_01\nn_app\SM\obj\Release\SM.pdb
+E:\NN_2018_02_11\nn_app\SM\bin\Release\SM.dll
+E:\NN_2018_02_11\nn_app\SM\bin\Release\SM.pdb
+E:\NN_2018_02_11\nn_app\SM\obj\Release\SM.csprojResolveAssemblyReference.cache
+E:\NN_2018_02_11\nn_app\SM\obj\Release\SM.dll
+E:\NN_2018_02_11\nn_app\SM\obj\Release\SM.pdb
