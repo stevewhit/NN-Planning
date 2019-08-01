@@ -6,7 +6,23 @@
 - [ ] SANNET.DataModel Library
 
 ### NeuralNetwork.Generic
-Blah..
+The idea is to have a fully abstract neural network for on-demand creation. With that, a few items need to be addressed:
+- [ ] Feed-forward activations
+- [ ] Backwards propogation
+
+#### Feed-Forward Activation Level Calculations
+```
+Key
+A - Activation Level of a neuron
+W - Weight between each neuron
+B - Bias of a neuron
+
+Inputs: (I1, I2)
+Hidden Neurons: (H1)
+Outputs: (O1)
+
+A(H1) = sigmoidfunction( A(I1) * W(I1 --> H1) + A(I2) * W(I2 --> H2) + B )
+```
 
 ### SANNET Application
 This application should be dynamic in nature and should store or display the expected outcome for each company with a probability that it will occur. The application <i>may</i> create multiple NNs for each company; one NN for each potential trading strategy.
