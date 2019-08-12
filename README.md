@@ -47,6 +47,40 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
 NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)
 CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
+```
+Requirements
+Stock needs to be volatileish
+Stock price needs to be between 10 and 150???
+
+Inputs
+RSI tangent (slope) (Short-term)
+RSI 2 days ago (Short-term)
+RSI Yesterday (Short-term)
+
+RSI tangent (slope) (Long-term)
+RSI 2 days ago (Long-term)
+RSI Yesterday (Long-term)
+
+RSI Cross(Did they cross?) -- How long ago?
+
+CCI 2 days ago (Short-term)
+CCI Yesterday (Short-term)
+
+CCI 2 days ago (Long-term)
+CCI Yesterday (Long-term)
+
+CCI Cross(Did they cross?) -- How long ago?
+
+SMA Short-term
+SMA long-term
+SMA Cross?
+
+The shape of the 
+
+Outputs
+Did it go up 4% within the next week BEFORE it goes down 2%
+```
+
 #### Stored Procedures
 - [ ] Technical Indicator Stored Procedure (needs companyId and indicator value arguments)
 ```SQL
