@@ -1,7 +1,7 @@
 # NN Planning
 
 ## Requirements
-- [*] NeuralNetwork.Generic library
+- [x] NeuralNetwork.Generic library
 - [ ] Stock Analysis Neural Network (SANNET) Application
 - [ ] SANNET.DataModel Library
 
