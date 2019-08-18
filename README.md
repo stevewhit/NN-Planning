@@ -1,14 +1,14 @@
 # NN Planning
 
 ## Requirements
-- [ ] NeuralNetwork.Generic library
+- [*] NeuralNetwork.Generic library
 - [ ] Stock Analysis Neural Network (SANNET) Application
 - [ ] SANNET.DataModel Library
 
 ### NeuralNetwork.Generic
 The idea is to have a fully abstract neural network for on-demand creation. With that, a few items need to be addressed:
-- [ ] Feed-forward activations
-- [ ] Backwards propogation
+- [x] Feed-forward activations
+- [x] Backwards propogation
 
 #### Feed-Forward Activation Level Calculations
 ```
@@ -21,7 +21,7 @@ Inputs: (I1, I2)
 Hidden Neurons: (H1)
 Outputs: (O1)
 
-A(H1) = sigmoidfunction( A(I1) * W(I1 --> H1) + A(I2) * W(I2 --> H2) + B )
+A(H1) = ActivationFunction( A(I1) * W(I1 --> H1) + A(I2) * W(I2 --> H2) + B )
 ```
 
 ### SANNET Application
