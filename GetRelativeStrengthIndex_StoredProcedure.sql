@@ -36,14 +36,14 @@ BEGIN
 
 	/* Calculate the change values for each quote */
 	INSERT INTO #rsiChangeCalculations 
-	SELECT [QuoteId], 
+	SELECT [Id] as [QuoteId], 
 	       [CompanyId], 
 	       [Date], 
 	       [Close], 
-	       [Close] - LAG([Close], 1) OVER (ORDER BY Date) as [Change]
+	       [Close] - LAG([Close], 1) OVER (ORDER BY [Id]) as [Change]
 	FROM StockMarketData.dbo.Quotes
 	WHERE [CompanyId] = @companyId
-	ORDER BY [Date]
+	ORDER BY [QuoteId]
 
 	/*********************************************************************************************
 		Temp table to hold RSI gain/loss calculations for the @rsiPeriod
@@ -66,11 +66,11 @@ BEGIN
 		N'INSERT INTO #rsiGainLossCalculations
 		  SELECT [QuoteId],
 		  	 CASE WHEN [Change] > 0 THEN [Change] ELSE 0 END as [CurrentGain],
-		  	 AVG(CASE WHEN [Change] > 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [Date] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING) as [AverageGain], 
+		  	 AVG(CASE WHEN [Change] > 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING) as [AverageGain], 
 		  	 CASE WHEN [Change] < 0 THEN ABS([Change]) ELSE 0 END  as [CurrentLoss],
-		  	 ABS(AVG(CASE WHEN [Change] < 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [Date] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING)) as [AverageLoss]
+		  	 ABS(AVG(CASE WHEN [Change] < 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING)) as [AverageLoss]
 		  FROM #rsiChangeCalculations
-		  ORDER BY [Date]'
+		  ORDER BY [QuoteId]'
 	EXEC sp_executesql @sql
 
 	/*********************************************************************************************
@@ -86,9 +86,9 @@ BEGIN
 
 	INSERT INTO @rsiRSCalculations
 	SELECT [QuoteId], 
-	       CASE WHEN AverageLoss = 0 AND LAG([AverageLoss], 1) OVER (ORDER BY Date) = 0 
+	       CASE WHEN AverageLoss = 0 AND LAG([AverageLoss], 1) OVER (ORDER BY [QuoteId]) = 0 
 	       	    THEN 100000.00 
-				ELSE (((LAG([AverageGain], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentGain]) / @rsiPeriod) / (((LAG([AverageLoss], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentLoss]) / @rsiPeriod) end as [RS]
+				ELSE (((LAG([AverageGain], 1) OVER (ORDER BY [QuoteId]) * (@rsiPeriod - 1)) + [CurrentGain]) / @rsiPeriod) / (((LAG([AverageLoss], 1) OVER (ORDER BY [QuoteId]) * (@rsiPeriod - 1)) + [CurrentLoss]) / @rsiPeriod) end as [RS]
 	FROM #rsiGainLossCalculations
 
 	/*********************************************************************************************
@@ -101,10 +101,10 @@ BEGIN
 	       --[Change], 
 	       --[CurrentGain], 
 	       --[AverageGain], 
-		   --(LAG([AverageGain], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) as [PreviousAverageGain],
+		   --(LAG([AverageGain], 1) OVER (ORDER BY [QuoteId]) * (@rsiPeriod - 1)) as [PreviousAverageGain],
 	       --[CurrentLoss], 
 	       --[AverageLoss], 
-		   --(LAG([AverageLoss], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) as [PreviousAverageLoss],
+		   --(LAG([AverageLoss], 1) OVER (ORDER BY [QuoteId]) * (@rsiPeriod - 1)) as [PreviousAverageLoss],
 	       --[RS],
 	       100.00 - (100.00 / (1.00 + RS)) as RSI
 	FROM @rsiRSCalculations rsCalcs
@@ -116,6 +116,5 @@ BEGIN
 	DROP TABLE #rsiChangeCalculations
 	DROP TABLE #rsiGainLossCalculations
 END
-GO
 
 

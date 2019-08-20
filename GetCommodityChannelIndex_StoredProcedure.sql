@@ -1,0 +1,116 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		Steve Whitmire Jr.
+-- Create date: 08-20-2019
+-- Description:	Returns the Commodity Channel Index (CCI) calculations for a given company.
+-- =============================================
+CREATE PROCEDURE [dbo].[GetCommodityChannelIndex] 
+	@companyId int = 0, 
+	@startDate date = null,
+	@endDate date = null,
+	@cciPeriod int = 1
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	/*********************************************************************************************
+		Temp table to hold RSI change calculations for the @rsiPeriod.
+		---
+		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
+		requires access to a table within its scope.
+	*********************************************************************************************/
+	IF OBJECT_ID('tempdb..#cciTypicalPriceCalculations') IS NOT NULL DROP TABLE #cciTypicalPriceCalculations
+	CREATE TABLE #cciTypicalPriceCalculations
+	(
+		[QuoteId] INT,
+		[CompanyId] INT,
+		[Date] DATE,
+		[TypicalPrice] DECIMAL(12, 4)
+	);
+
+	INSERT INTO #cciTypicalPriceCalculations
+	SELECT [Id] as [QuoteId], 
+		   [CompanyId],
+		   [Date],	
+	      ([High] + [Low] + [Close]) / 3.0 as [TypicalPrice]
+	FROM StockMarketData.dbo.Quotes
+	WHERE [CompanyId] = @companyId
+	ORDER BY [QuoteId]
+
+	/*********************************************************************************************
+		Temp table to hold RSI change calculations for the @rsiPeriod.
+		---
+		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
+		requires access to a table within its scope.
+	*********************************************************************************************/
+	IF OBJECT_ID('tempdb..#cciMovingAverageCalculations') IS NOT NULL DROP TABLE #cciMovingAverageCalculations
+	CREATE TABLE #cciMovingAverageCalculations
+	(
+		[QuoteId] INT,
+		[TypicalPrice] DECIMAL(12, 4),
+		[MovingAverage] DECIMAL(12, 4)
+	);
+
+	/* Calculate the average gain/loss over the @rsiPeriod for each quote */
+	DECLARE @sql nvarchar(max) = 
+		N'INSERT INTO #cciMovingAverageCalculations
+		  SELECT [QuoteId],
+				 [TypicalPrice],
+				 AVG([TypicalPrice]) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @cciPeriod) +' PRECEDING) as [MovingAverage]
+		  FROM #cciTypicalPriceCalculations
+		  ORDER BY [QuoteId]'
+	EXEC sp_executesql @sql
+
+	/*********************************************************************************************
+		Temp table to hold RSI change calculations for the @rsiPeriod.
+		---
+		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
+		requires access to a table within its scope.
+	*********************************************************************************************/
+	IF OBJECT_ID('tempdb..#cciMeanDeviationCalculations') IS NOT NULL DROP TABLE #cciMeanDeviationCalculations
+	CREATE TABLE #cciMeanDeviationCalculations
+	(
+		[QuoteId] INT,
+		[MeanDeviation] DECIMAL(12, 4)
+	);
+
+	/* Calculate the average gain/loss over the @rsiPeriod for each quote */
+	SET @sql = 
+		N'INSERT INTO #cciMeanDeviationCalculations
+		  SELECT [QuoteId],
+				 AVG(ABS([TypicalPrice] - [MovingAverage])) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @cciPeriod) +' PRECEDING) as [MeanDeviation]
+		  FROM #cciMovingAverageCalculations
+		  ORDER BY [QuoteId]'
+	EXEC sp_executesql @sql
+
+	/*********************************************************************************************
+		Table to hold the RSI values over the @rsiPeriod for each quote. 
+	*********************************************************************************************/
+	SELECT typicalPriceCalcs.QuoteId as [QuoteId], 
+	       typicalPriceCalcs.CompanyId as [CompanyId], 
+	       typicalPriceCalcs.Date as [Date],
+		   [High],[Low],[Close],
+		   typicalPriceCalcs.TypicalPrice as [TypicalPrice],
+		   movingAvgCalcs.MovingAverage as [MovingAverage],
+		   meanDeviationCalcs.MeanDeviation as [MeanDeviation],
+		   CASE WHEN meanDeviationCalcs.MeanDeviation = 0
+			    THEN 10111.00
+				ELSE (typicalPriceCalcs.TypicalPrice - movingAvgCalcs.MovingAverage) / (.015 * meanDeviationCalcs.MeanDeviation)
+				END as CCI
+	FROM #cciTypicalPriceCalculations typicalPriceCalcs
+		INNER JOIN #cciMovingAverageCalculations movingAvgCalcs ON typicalPriceCalcs.QuoteId = movingAvgCalcs.QuoteId
+		INNER JOIN #cciMeanDeviationCalculations meanDeviationCalcs on typicalPriceCalcs.QuoteId = meanDeviationCalcs.QuoteId
+		Inner join StockMarketData.dbo.Quotes quotes on quotes.Id = typicalPriceCalcs.QuoteId
+	WHERE [Date] >= @startDate AND [Date] <= @endDate
+
+	/* Drop temp tables before finishing */
+	DROP TABLE #cciTypicalPriceCalculations
+	DROP TABLE #cciMovingAverageCalculations
+	DROP TABLE #cciMeanDeviationCalculations
+END
+GO
