@@ -40,6 +40,17 @@ The SANNET Application should perform the following items:
     * Apply latest quote to model to get expected outcome for latest quote
 - [ ] Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
+#### Ideas
+For all stocks in table marked for comparison:
+ 1. Verify stock exists in sm.company table. If not, run downloader for company.
+ 1. Gather data from stored procedure for 'x' days of training/testing.
+ 1. Verify stock contains 'x' days worth of quotes. If not, run downloader for quotes.
+ 1. Setup NN
+ 1. Train NN (all data between 1 week and 20 weeks ago?)
+ 1. Test NN (tomorrow)
+ 1. Test NN (week)
+ 1. Test NN (month)
+
 ### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
 
