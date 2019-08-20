@@ -18,7 +18,12 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	/* Temp table to hold RSI change calculations for the @rsiPeriod*/
+	/*********************************************************************************************
+		Temp table to hold RSI change calculations for the @rsiPeriod.
+		---
+		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
+		requires access to a table within its scope.
+	*********************************************************************************************/
 	IF OBJECT_ID('tempdb..#rsiChangeCalculations') IS NOT NULL DROP TABLE #rsiChangeCalculations
 	CREATE TABLE #rsiChangeCalculations
 	(
@@ -29,19 +34,23 @@ BEGIN
 		[Change] DECIMAL(12, 4)
 	);
 
-	/* Calculate the change values for each date */
+	/* Calculate the change values for each quote */
 	INSERT INTO #rsiChangeCalculations 
-	      --([QuoteId], [CompanyId], [Date], [Close], [Change])
 	SELECT [QuoteId], 
 	       [CompanyId], 
 	       [Date], 
 	       [Close], 
-	       [Close] - LAG([Close], 1) OVER (ORDER BY Date) as Change
+	       [Close] - LAG([Close], 1) OVER (ORDER BY Date) as [Change]
 	FROM StockMarketData.dbo.Quotes
-	WHERE CompanyId = @companyId
-	ORDER BY Date
+	WHERE [CompanyId] = @companyId
+	ORDER BY [Date]
 
-	/* Temp table to hold RSI gain/loss calculations for the @rsiPeriod*/
+	/*********************************************************************************************
+		Temp table to hold RSI gain/loss calculations for the @rsiPeriod
+		---
+		NOTE: A temp table is used here because the query has to be dynamic in order
+		to select @rsiPeriod previous rows.
+	*********************************************************************************************/
 	IF OBJECT_ID('tempdb..#rsiGainLossCalculations') IS NOT NULL DROP TABLE #rsiGainLossCalculations
 	CREATE TABLE #rsiGainLossCalculations
 	(
@@ -52,7 +61,7 @@ BEGIN
 		[AverageLoss] DECIMAL(12, 4)
 	);
 	
-	/* Calculate the average gain/loss for each date */
+	/* Calculate the average gain/loss over the @rsiPeriod for each quote */
 	DECLARE @sql nvarchar(max) = 
 		N'INSERT INTO #rsiGainLossCalculations
 		  SELECT [QuoteId],
@@ -64,42 +73,48 @@ BEGIN
 		  ORDER BY [Date]'
 	EXEC sp_executesql @sql
 
-	/* Holds the RS values */
+	/*********************************************************************************************
+		Table to hold the RS values over the @rsiPeriod for each quote. 
+		---
+		NOTE: When AverageLoss and PreviousAverageLoss both equal 0, RSI by default goes to 100. 
+	*********************************************************************************************/
 	DECLARE @rsiRSCalculations TABLE 
 	(
-		[QuoteId] INT,  
+		[QuoteId] INT,
 		[RS] DECIMAL(12, 4)
 	)
 
 	INSERT INTO @rsiRSCalculations
-	SELECT [QuoteId] 
+	SELECT [QuoteId], 
 	       CASE WHEN AverageLoss = 0 AND LAG([AverageLoss], 1) OVER (ORDER BY Date) = 0 
 	       	    THEN 100000.00 
-		    ELSE (((LAG([AverageGain], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentGain]) / @rsiPeriod) / (((LAG([AverageLoss], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentLoss]) / @rsiPeriod) end as [RS]
+				ELSE (((LAG([AverageGain], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentGain]) / @rsiPeriod) / (((LAG([AverageLoss], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) + [CurrentLoss]) / @rsiPeriod) end as [RS]
 	FROM #rsiGainLossCalculations
 
-	/* Drop temp tables before finishing /*
-	DROP TABLE #rsiChangeCalculations
-	DROP TABLE #rsiGainLossCalculations
-
-	/* Calculate RSI values */
-	SELECT [QuoteId], 
+	/*********************************************************************************************
+		Table to hold the RSI values over the @rsiPeriod for each quote. 
+	*********************************************************************************************/
+	SELECT rsCalcs.QuoteId as [QuoteId], 
 	       [CompanyId], 
 	       [Date], 
-	       [Close], 
-	       [Change], 
-	       [CurrentGain], 
-	       [SumGain], 
-	       [AverageGain], 
-	       [PreviousAverageGain], 
-	       [CurrentLoss], 
-	       [SumLoss], 
-	       [AverageLoss], 
-	       [PreviousAverageLoss], 
-	       [RS],
+	       --[Close], 
+	       --[Change], 
+	       --[CurrentGain], 
+	       --[AverageGain], 
+		   --(LAG([AverageGain], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) as [PreviousAverageGain],
+	       --[CurrentLoss], 
+	       --[AverageLoss], 
+		   --(LAG([AverageLoss], 1) OVER (ORDER BY Date) * (@rsiPeriod - 1)) as [PreviousAverageLoss],
+	       --[RS],
 	       100.00 - (100.00 / (1.00 + RS)) as RSI
-	FROM @rsiRSCalculations
-	WHERE date >= @startDate AND date <= @endDate
+	FROM @rsiRSCalculations rsCalcs
+		INNER JOIN #rsiChangeCalculations changeCalcs ON rsCalcs.QuoteId = changeCalcs.QuoteId
+		INNER JOIN #rsiGainLossCalculations gainLossCalcs on rsCalcs.QuoteId = gainLossCalcs.QuoteId
+	WHERE [Date] >= @startDate AND [Date] <= @endDate
+
+	/* Drop temp tables before finishing */
+	DROP TABLE #rsiChangeCalculations
+	DROP TABLE #rsiGainLossCalculations
 END
 GO
 
