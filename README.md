@@ -96,6 +96,7 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 - [x] GetRSI (company, period, start & end date arguments)
 - [x] GetCCI (company, period, start & end date arguments)
 - [x] GetSMA (company, period, start & end date arguments)
+- [ ] GetRSICross (period1, period2)
 - [ ] GetTrainingDataset
    
 ``` SQL
