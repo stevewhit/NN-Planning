@@ -40,7 +40,7 @@ The SANNET Application should perform the following items:
     * Apply latest quote to model to get expected outcome for latest quote
 - [ ] Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
-#### Ideas
+#### Layout
 For all stocks in table marked for comparison:
  1. Verify stock exists in sm.company table. If not, run downloader for company.
  1. Gather data from stored procedure for 'x' days of training/testing.
@@ -93,11 +93,28 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 ```
 
 #### Stored Procedures
-- [ ] Technical Indicator Stored Procedure (needs companyId and indicator value arguments)
-```SQL
--- Selects all quote information and also the close from 2 days ago --> Very useful for technical indicators.
-SELECT Id, CompanyId, Date, [Open], High, Low, [Close], Volume, LastModifiedDate, LAG([Close], 2) OVER (ORDER BY Date) AS TwoDaysAgoClose
-FROM StockMarketData.dbo.Quotes
-WHERE CompanyId = 2
-ORDER BY Date
+- [x] GetRSI (company, period, start & end date arguments)
+- [x] GetCCI (company, period, start & end date arguments)
+- [x] GetSMA (company, period, start & end date arguments)
+- [ ] GetTrainingDataset
+   
+``` SQL
+-- Example of executing stored procedure into table variable.
+CREATE TABLE T1
+(
+   FakeParam1 INT,
+   FakeParam2 INT
+)
+
+INSERT INTO T1
+EXECUTE FakeStoredProcedure [inputParamHere], [input2ParamHere]
+```
+--------------
+``` SQL
+-- Inputs: RSI, CCI, SMA, & all associated crosses
+-- Outputs: Before the next 5 dates are up, did it:
+--          1. Rise 4% or more to trigger sell?
+--          2. Fall 2% or more to trigger sell?
+--          3. Close at end above the Open?
+--          4. Close at end below the Open?
 ```
