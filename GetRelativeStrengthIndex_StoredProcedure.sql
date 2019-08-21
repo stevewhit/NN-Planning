@@ -68,7 +68,7 @@ BEGIN
 		  	 CASE WHEN [Change] > 0 THEN [Change] ELSE 0 END as [CurrentGain],
 		  	 AVG(CASE WHEN [Change] > 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING) as [AverageGain], 
 		  	 CASE WHEN [Change] < 0 THEN ABS([Change]) ELSE 0 END  as [CurrentLoss],
-		  	 ABS(AVG(CASE WHEN [Change] < 0 THEN [Change] ELSE 0 END ) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING)) as [AverageLoss]
+		  	 AVG(ABS(CASE WHEN [Change] < 0 THEN [Change] ELSE 0 END )) OVER (ORDER BY [QuoteId] ROWS ' + convert(varchar, @rsiPeriod) +' PRECEDING) as [AverageLoss]
 		  FROM #rsiChangeCalculations
 		  ORDER BY [QuoteId]'
 	EXEC sp_executesql @sql

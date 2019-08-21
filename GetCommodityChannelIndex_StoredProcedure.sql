@@ -19,9 +19,9 @@ BEGIN
 	SET NOCOUNT ON;
 
 	/*********************************************************************************************
-		Temp table to hold RSI change calculations for the @rsiPeriod.
+		Temp table to hold CCI typical price calculations for the @cciPeriod.
 		---
-		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
+		NOTE: A temp table is used here because the next dynamic sql statement (#cciMovingAverageCalculations)
 		requires access to a table within its scope.
 	*********************************************************************************************/
 	IF OBJECT_ID('tempdb..#cciTypicalPriceCalculations') IS NOT NULL DROP TABLE #cciTypicalPriceCalculations
@@ -43,10 +43,10 @@ BEGIN
 	ORDER BY [QuoteId]
 
 	/*********************************************************************************************
-		Temp table to hold RSI change calculations for the @rsiPeriod.
+		Temp table to hold CCI moving average calculations for the @cciPeriod.
 		---
-		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
-		requires access to a table within its scope.
+		NOTE: A temp table is used here because the query has to be dynamic in order
+		to select @cciPeriod previous rows.
 	*********************************************************************************************/
 	IF OBJECT_ID('tempdb..#cciMovingAverageCalculations') IS NOT NULL DROP TABLE #cciMovingAverageCalculations
 	CREATE TABLE #cciMovingAverageCalculations
@@ -67,10 +67,10 @@ BEGIN
 	EXEC sp_executesql @sql
 
 	/*********************************************************************************************
-		Temp table to hold RSI change calculations for the @rsiPeriod.
+		Temp table to hold CCI mean deviation calculations for the @cciPeriod.
 		---
-		NOTE: A temp table is used here because the next dynamic sql statement (#rsiGainLossCalculations)
-		requires access to a table within its scope.
+		NOTE: A temp table is used here because the query has to be dynamic in order
+		to select @cciPeriod previous rows.
 	*********************************************************************************************/
 	IF OBJECT_ID('tempdb..#cciMeanDeviationCalculations') IS NOT NULL DROP TABLE #cciMeanDeviationCalculations
 	CREATE TABLE #cciMeanDeviationCalculations
@@ -89,15 +89,15 @@ BEGIN
 	EXEC sp_executesql @sql
 
 	/*********************************************************************************************
-		Table to hold the RSI values over the @rsiPeriod for each quote. 
+		Table to hold the CCI values over the @cciPeriod for each quote. 
 	*********************************************************************************************/
 	SELECT typicalPriceCalcs.QuoteId as [QuoteId], 
 	       typicalPriceCalcs.CompanyId as [CompanyId], 
 	       typicalPriceCalcs.Date as [Date],
-		   [High],[Low],[Close],
-		   typicalPriceCalcs.TypicalPrice as [TypicalPrice],
-		   movingAvgCalcs.MovingAverage as [MovingAverage],
-		   meanDeviationCalcs.MeanDeviation as [MeanDeviation],
+		   --[High],[Low],[Close],
+		   --typicalPriceCalcs.TypicalPrice as [TypicalPrice],
+		   --movingAvgCalcs.MovingAverage as [MovingAverage],
+		   --meanDeviationCalcs.MeanDeviation as [MeanDeviation],
 		   CASE WHEN meanDeviationCalcs.MeanDeviation = 0
 			    THEN 10111.00
 				ELSE (typicalPriceCalcs.TypicalPrice - movingAvgCalcs.MovingAverage) / (.015 * meanDeviationCalcs.MeanDeviation)
@@ -105,7 +105,7 @@ BEGIN
 	FROM #cciTypicalPriceCalculations typicalPriceCalcs
 		INNER JOIN #cciMovingAverageCalculations movingAvgCalcs ON typicalPriceCalcs.QuoteId = movingAvgCalcs.QuoteId
 		INNER JOIN #cciMeanDeviationCalculations meanDeviationCalcs on typicalPriceCalcs.QuoteId = meanDeviationCalcs.QuoteId
-		Inner join StockMarketData.dbo.Quotes quotes on quotes.Id = typicalPriceCalcs.QuoteId
+		--INNER JOIN StockMarketData.dbo.Quotes quotes on quotes.Id = typicalPriceCalcs.QuoteId
 	WHERE [Date] >= @startDate AND [Date] <= @endDate
 
 	/* Drop temp tables before finishing */
@@ -113,4 +113,3 @@ BEGIN
 	DROP TABLE #cciMovingAverageCalculations
 	DROP TABLE #cciMeanDeviationCalculations
 END
-GO
