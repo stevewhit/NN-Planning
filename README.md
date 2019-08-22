@@ -148,3 +148,103 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 				 END as LastDateLongAboveShort
 	FROM @RSIShortTermTable short INNER JOIN @RSILongTermTable long ON short.QuoteId = long.QuoteId
 ```
+``` SQL
+
+	-- Dataset
+	DECLARE @rsiShort TABLE
+	(
+		[QuoteId] INT,
+		[CompanyId] INT,
+		[Date] DATE,
+		[RSIShort] DECIMAL(12, 4)
+	)
+
+	INSERT INTO @rsiShort values(0, 2, '01-01-2019', 1);
+	INSERT INTO @rsiShort values(1, 2, '01-03-2019', 2);
+	INSERT INTO @rsiShort values(2, 2, '01-04-2019', 3);
+	INSERT INTO @rsiShort values(3, 2, '01-05-2019', 4);
+	INSERT INTO @rsiShort values(4, 2, '01-06-2019', 5);
+	INSERT INTO @rsiShort values(5, 2, '01-07-2019', 6);
+	INSERT INTO @rsiShort values(6, 2, '01-08-2019', 5);
+	INSERT INTO @rsiShort values(7, 2, '01-09-2019', 5);
+	INSERT INTO @rsiShort values(8, 2, '01-10-2019', 5);
+	INSERT INTO @rsiShort values(9, 2, '01-11-2019', 5);
+	INSERT INTO @rsiShort values(10, 2, '01-12-2019', 5);
+
+
+	DECLARE @rsiLong TABLE
+	(
+		[QuoteId] INT,
+		[CompanyId] INT,
+		[Date] DATE,
+		[RSILong] DECIMAL(12, 4)
+	)
+
+	INSERT INTO @rsiLong values(0, 2, '01-01-2019', 2);
+	INSERT INTO @rsiLong values(1, 2, '01-03-2019', 1);
+	INSERT INTO @rsiLong values(2, 2, '01-04-2019', 4);
+	INSERT INTO @rsiLong values(3, 2, '01-05-2019', 3);
+	INSERT INTO @rsiLong values(4, 2, '01-06-2019', 6);
+	INSERT INTO @rsiLong values(5, 2, '01-07-2019', 7);
+	INSERT INTO @rsiLong values(6, 2, '01-08-2019', 8);
+	INSERT INTO @rsiLong values(7, 2, '01-09-2019', 9);
+	INSERT INTO @rsiLong values(8, 2, '01-10-2019', 4);
+	INSERT INTO @rsiLong values(9, 2, '01-11-2019', 4);
+	INSERT INTO @rsiLong values(10, 2, '01-12-2019', 4);
+
+	DECLARE @combinedDataset TABLE
+	(
+		[QuoteId] INT,
+		[CompanyId] INT,
+		[Date] DATE,
+		[RSIShort] DECIMAL(12, 4),
+		[RSILong] DECIMAL(12, 4),
+		[ConsecutiveDaysShortAboveLong] INT,
+		[ConsecutiveDaysLongAboveShort] INT
+	)
+
+	INSERT INTO @combinedDataset
+	SELECT rsiShort.*,
+		   rsiLong.[RSILong],
+		   CASE WHEN rsiShort.RSIShort < rsiLong.RSILong
+			    THEN 0
+				ELSE (SELECT COUNT(*)+1 
+					  FROM @rsiShort rsiShort1 
+					  WHERE rsiShort1.Date < rsiShort.[Date] AND 
+							rsiShort1.Date > (SELECT MAX(rsiLong2.[Date]) 
+										      FROM @rsiShort rsiShort2 INNER JOIN @rsiLong rsiLong2 ON rsiShort2.QuoteId = rsiLong2.QuoteId 
+										      WHERE rsiLong2.[Date] < rsiShort.[Date] AND rsiLong2.RSILong > rsiShort2.RSIShort))
+				END as [ConsecutiveDaysShortAboveLong],
+		   CASE WHEN rsiShort.RSIShort > rsiLong.RSILong
+			    THEN 0
+				ELSE (SELECT COUNT(*)+1 
+					  FROM @rsiShort rsiShort1 
+					  WHERE rsiShort1.Date < rsiShort.[Date] AND 
+							rsiShort1.Date > (SELECT MAX(rsiLong2.[Date]) 
+										      FROM @rsiShort rsiShort2 INNER JOIN @rsiLong rsiLong2 ON rsiShort2.QuoteId = rsiLong2.QuoteId 
+										      WHERE rsiLong2.[Date] < rsiShort.[Date] AND rsiLong2.RSILong < rsiShort2.RSIShort))
+				END as [ConsecutiveDaysLongAboveShort]
+	FROM @rsiShort rsiShort INNER JOIN @rsiLong rsiLong ON rsiShort.QuoteId = rsiLong.QuoteId
+
+
+	DECLARE @combinedDatasetNormalized TABLE
+	(
+		[QuoteId] INT,
+		[CompanyId] INT,
+		[Date] DATE,
+		[RSIShort] DECIMAL(12, 4),
+		[RSILong] DECIMAL(12, 4),
+		[ConsecutiveDaysShortAboveLong] INT,
+		[ConsecutiveDaysLongAboveShort] INT
+	)
+
+	--INSERT INTO @combinedDatasetNormalized
+	SELECT [QuoteId],
+		   [CompanyId],
+		   [Date],
+		   RSIShort / 100.0 as [RSIShort],
+		   RSILong / 100.0 as [RSILong],
+		   ConsecutiveDaysShortAboveLong / 10.0 as [ConsecutiveDaysShortAboveLong],
+		   ConsecutiveDaysLongAboveShort / 10.0 as [ConsecutiveDaysLongAboveShort]
+	FROM @combinedDataset
+```
