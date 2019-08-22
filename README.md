@@ -99,17 +99,6 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 - [ ] GetRSICross (period1, period2)
 - [ ] GetTrainingDataset
    
-``` SQL
--- Example of executing stored procedure into table variable.
-CREATE TABLE T1
-(
-   FakeParam1 INT,
-   FakeParam2 INT
-)
-
-INSERT INTO T1
-EXECUTE FakeStoredProcedure [inputParamHere], [input2ParamHere]
-```
 --------------
 ``` SQL
 -- Inputs: RSI, CCI, SMA, & all associated crosses
@@ -118,4 +107,44 @@ EXECUTE FakeStoredProcedure [inputParamHere], [input2ParamHere]
 --          2. Fall 2% or more to trigger sell?
 --          3. Close at end above the Open?
 --          4. Close at end below the Open?
+```
+``` SQL
+	DECLARE @companyId INT = 2
+	DECLARE @startDate DATE = '01-01-2018'
+	DECLARE @endDate DATE = '01-01-2019'
+	DECLARE @rsiPeriodShort INT = 7
+	DECLARE @rsiPeriodLong INT = 14
+	
+	DECLARE @RSIShortTermTable TABLE
+	(
+		[QuoteId] INT, 
+	    [CompanyId] INT, 
+	    [Date] DATE, 
+	    [RSIShort] DECIMAL(12, 4)
+	)
+
+	INSERT INTO @RSIShortTermTable
+	EXECUTE GetRelativeStrengthIndex @companyId, @startDate, @endDate, @rsiPeriodShort
+
+	DECLARE @RSILongTermTable TABLE
+	(
+		[QuoteId] INT, 
+	    [CompanyId] INT, 
+	    [Date] DATE, 
+	    [RSILong] DECIMAL(12, 4)
+	)
+
+	INSERT INTO @RSILongTermTable
+	EXECUTE GetRelativeStrengthIndex @companyId, @startDate, @endDate, @rsiPeriodLong
+
+	SELECT short.[QuoteId], 
+			short.[CompanyId], 
+			short.[Date], 
+			RSIShort,
+			RSILong,
+			CASE WHEN long.RSILong > short.RSIShort 
+				 THEN NULL 
+				 ELSE (SELECT MAX(long2.Date) FROM @RSILongTermTable long2 INNER JOIN @RSIShortTermTable short2 on long2.QuoteId = short2.QuoteId WHERE long2.Date <= short.Date AND long2.RSILong > short2.RSIShort)
+				 END as LastDateLongAboveShort
+	FROM @RSIShortTermTable short INNER JOIN @RSILongTermTable long ON short.QuoteId = long.QuoteId
 ```
