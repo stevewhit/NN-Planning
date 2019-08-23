@@ -127,6 +127,12 @@ ELSE
    PRINT 'Type "ValuesCrossoverType" already exists...'
    
 -- To drop type use "DROP TYPE ValuesCrossoverType".
+
+-- Insert into UDT
+DECLARE @rsis ValuesCrossoverType
+INSERT INTO @rsis (Id, Value1, Value2) VALUES (0, 1, 2), (1, 2, 1), (2, 2, 3), (3, 3, 2)
+
+SELECT * FROM @rsis
 ```
 
 
