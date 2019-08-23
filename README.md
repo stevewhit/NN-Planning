@@ -110,3 +110,28 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 --          3. Close at end above the Open?
 --          4. Close at end below the Open?
 ```
+
+``` SQL
+-- Create user-defined type for values crossover
+IF NOT EXISTS (SELECT 1 FROM sys.types WHERE is_table_type = 1 AND name = 'ValuesCrossoverType')
+BEGIN
+   PRINT 'Creating Type "ValuesCrossoverType"...'
+   CREATE TYPE ValuesCrossoverType AS TABLE
+   (
+      [Id] INT,
+      [Value1] DECIMAL(12, 4),
+      [Value2] DECIMAL(12, 4)
+   )
+END
+ELSE
+   PRINT 'Type "ValuesCrossoverType" already exists...'
+   
+-- To drop type use "DROP TYPE ValuesCrossoverType".
+```
+
+
+
+
+
+
+
