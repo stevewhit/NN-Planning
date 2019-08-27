@@ -4,6 +4,7 @@
 - [x] NeuralNetwork.Generic library
 - [ ] Stock Analysis Neural Network (SANNET) Application
 - [ ] SANNET.DataModel Library
+- [ ] SANNET.Business
 
 ### NeuralNetwork.Generic
 The idea is to have a fully abstract neural network for on-demand creation. With that, a few items need to be addressed:
@@ -40,7 +41,6 @@ The SANNET Application should perform the following items:
     * Apply latest quote to model to get expected outcome for latest quote
 - [ ] Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
-#### Layout
 For all stocks in table marked for comparison:
  1. Verify stock exists in sm.company table. If not, run downloader for company.
  1. Gather data from stored procedure for 'x' days of training/testing.
@@ -51,48 +51,18 @@ For all stocks in table marked for comparison:
  1. Test NN (week)
  1. Test NN (month)
 
-### SANNET Database
+#### SANNET.DataModel Library
+- [ ] Database creation scripts
+- [ ] ApplicationDbContext
+
+##### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
 
-#### Tables
+##### Tables
 NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)
 CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
-```
-Requirements
-Stock needs to be volatileish
-Stock price needs to be between 10 and 150???
-
-Inputs
-RSI tangent (slope) (Short-term)
-RSI 2 days ago (Short-term)
-RSI Yesterday (Short-term)
-
-RSI tangent (slope) (Long-term)
-RSI 2 days ago (Long-term)
-RSI Yesterday (Long-term)
-
-RSI Cross(Did they cross?) -- How long ago?
-
-CCI 2 days ago (Short-term)
-CCI Yesterday (Short-term)
-
-CCI 2 days ago (Long-term)
-CCI Yesterday (Long-term)
-
-CCI Cross(Did they cross?) -- How long ago?
-
-SMA Short-term
-SMA long-term
-SMA Cross?
-
-The shape of the 
-
-Outputs
-Did it go up 4% within the next week BEFORE it goes down 2%
-```
-
-#### Stored Procedures
+##### Stored Procedures
 - [x] GetRSI (company, period, start & end date arguments)
 - [x] GetCCI (company, period, start & end date arguments)
 - [x] GetSMA (company, period, start & end date arguments)
@@ -111,9 +81,6 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 --          4. Close at end below the Open?
 ```
 
-
-
-
-
-
-
+#### SANNET.Business Library
+- [ ] Repositories
+- [ ] Services
