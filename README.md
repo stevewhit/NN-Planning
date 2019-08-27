@@ -96,10 +96,10 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 - [x] GetRSI (company, period, start & end date arguments)
 - [x] GetCCI (company, period, start & end date arguments)
 - [x] GetSMA (company, period, start & end date arguments)
-- [ ] GetRSICross (period1, period2)
+- [x] GetRSICross (period1, period2)
 - [ ] GetTrainingDataset
-- [ ] Create User Defined Table type
-- [ ] Create FUNCTION that returns table crosses
+- [x] Create User Defined Table type
+- [x] Create FUNCTION that returns table crosses
    
 --------------
 ``` SQL
@@ -109,30 +109,6 @@ Did it go up 4% within the next week BEFORE it goes down 2%
 --          2. Fall 2% or more to trigger sell?
 --          3. Close at end above the Open?
 --          4. Close at end below the Open?
-```
-
-``` SQL
--- Create user-defined type for values crossover
-IF NOT EXISTS (SELECT 1 FROM sys.types WHERE is_table_type = 1 AND name = 'ValuesCrossoverType')
-BEGIN
-   PRINT 'Creating Type "ValuesCrossoverType"...'
-   CREATE TYPE ValuesCrossoverType AS TABLE
-   (
-      [Id] INT,
-      [Value1] DECIMAL(12, 4),
-      [Value2] DECIMAL(12, 4)
-   )
-END
-ELSE
-   PRINT 'Type "ValuesCrossoverType" already exists...'
-   
--- To drop type use "DROP TYPE ValuesCrossoverType".
-
--- Insert into UDT
-DECLARE @rsis ValuesCrossoverType
-INSERT INTO @rsis (Id, Value1, Value2) VALUES (0, 1, 2), (1, 2, 1), (2, 2, 3), (3, 3, 2)
-
-SELECT * FROM @rsis
 ```
 
 
