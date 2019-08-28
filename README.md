@@ -83,4 +83,14 @@ CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 #### SANNET.Business Library
 - [ ] Repositories
+   - [ ] TechnicalIndicatorRepositories
+      * GetRSIValues(int period) ==> Dictionary<quoteId, RSIValue>
+      * GetCCIValues(int period) ==> Dictionary<quoteId, CCIValue>
+      * GetSMAValues(int period) ==> Dictionary<quoteId, SMAValue>
+      * GetRSICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, RSICrossValue>
+      * GetCCICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, CCICrossValue>
+      * GetSMACrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, SMACrossValue>
 - [ ] Services
+   - [ ] DatasetService
+      * GetTrainingDataset() ---> Combines all technical indicator values into one large training dataset to use in NN
+      * ...
