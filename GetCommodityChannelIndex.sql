@@ -1,13 +1,17 @@
-USE [SANNET]
-GO
-
-/****** Object:  StoredProcedure [dbo].[GetCommodityChannelIndex]    Script Date: 8/28/2019 10:26:14 PM ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetCommodityChannelIndex')
+BEGIN
+	PRINT 'Dropping "GetCommodityChannelIndex" stored procedure...'
+	DROP PROCEDURE GetCommodityChannelIndex
+END
+GO
+
+PRINT 'Creating "GetCommodityChannelIndex" stored procedure...'
+GO
 
 -- =============================================
 -- Author:		Steve Whitmire Jr.

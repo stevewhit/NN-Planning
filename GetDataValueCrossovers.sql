@@ -30,6 +30,7 @@ RETURN
 (
 	SELECT
 	[Id],
+	[Date],
 	CASE WHEN valuesOuter.Value1 < valuesOuter.Value2
 			    THEN 0
 				ELSE (SELECT COUNT(*)

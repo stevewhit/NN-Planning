@@ -1,13 +1,17 @@
-USE [SANNET]
-GO
-
-/****** Object:  StoredProcedure [dbo].[GetSimpleMovingAverage]    Script Date: 8/28/2019 10:27:33 PM ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetSimpleMovingAverage')
+BEGIN
+	PRINT 'Dropping "GetSimpleMovingAverage" stored procedure...'
+	DROP PROCEDURE GetSimpleMovingAverage
+END
+GO
+
+PRINT 'Creating "GetSimpleMovingAverage" stored procedure...'
+GO
 
 -- =============================================
 -- Author:		Steve Whitmire Jr.

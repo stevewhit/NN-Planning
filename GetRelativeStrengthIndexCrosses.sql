@@ -1,11 +1,16 @@
-USE [SANNET]
-GO
-
-/****** Object:  StoredProcedure [dbo].[GetRelativeStrengthIndexCrosses]    Script Date: 8/28/2019 10:27:19 PM ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetRelativeStrengthIndexCrosses')
+BEGIN
+	PRINT 'Dropping "GetRelativeStrengthIndexCrosses" stored procedure...'
+	DROP PROCEDURE GetRelativeStrengthIndexCrosses
+END
+GO
+
+PRINT 'Creating "GetRelativeStrengthIndexCrosses" stored procedure...'
 GO
 
 -- =============================================
