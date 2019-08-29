@@ -41,6 +41,11 @@ The SANNET Application should perform the following items:
     * Apply latest quote to model to get expected outcome for latest quote
 - [ ] Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
+T
+
+
+
+
 For all stocks in table marked for comparison:
  1. Verify stock exists in sm.company table. If not, run downloader for company.
  1. Gather data from stored procedure for 'x' days of training/testing.
@@ -64,10 +69,12 @@ CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 ##### Stored Procedures
 - [x] GetRSI (company, period, start & end date arguments)
-- [x] GetCCI (company, period, start & end date arguments)
-- [x] GetSMA (company, period, start & end date arguments)
 - [x] GetRSICross (period1, period2)
-- [ ] GetTrainingDataset
+- [x] GetCCI (company, period, start & end date arguments)
+- [x] GetCCICross (period1, period2)
+- [x] GetSMA (company, period, start & end date arguments)
+- [x] GetSMACross (period1, period2)
+- [x] GetFiveDayFuturePerformance(fromDate)
 - [x] Create User Defined Table type
 - [x] Create FUNCTION that returns table crosses
    
@@ -83,7 +90,7 @@ CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 #### SANNET.Business Library
 - [ ] Repositories
-   - [ ] TechnicalIndicatorRepositories
+   - [ ] TechnicalIndicatorRepository(ISANNETContext)
       * GetRSIValues(int period) ==> Dictionary<quoteId, RSIValue>
       * GetCCIValues(int period) ==> Dictionary<quoteId, CCIValue>
       * GetSMAValues(int period) ==> Dictionary<quoteId, SMAValue>
@@ -91,6 +98,39 @@ CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
       * GetCCICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, CCICrossValue>
       * GetSMACrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, SMACrossValue>
 - [ ] Services
-   - [ ] DatasetService
-      * GetTrainingDataset() ---> Combines all technical indicator values into one large training dataset to use in NN
-      * ...
+   - [ ] DatasetService(ITechinicalIndicatorRepository)
+      * GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date.
+      * GetTestingData(Date) ---> Returns the necessary inputs for a specific date that will be inserted into the NN where outputs will be captured.
+   - [ ] PredictionService(INeuralNetwork, IDatasetService, IPredictionRepository)
+      * (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date), GeneratePrediction();
+      * GeneratePrediction(id) ---> Gets the training dataset, trains the network, Gets the testing dataset and applys as input to NN. Analyzes results and generates entry in predictions table. Returns prediction??
+      * AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
+      * AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
+      * CreatePrediction()
+      * GetPredictions()
+      * GetPredictionById(id)
+      * UpdatePrediction()
+      * DeletePrediction()
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
