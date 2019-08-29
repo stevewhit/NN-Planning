@@ -41,11 +41,6 @@ The SANNET Application should perform the following items:
     * Apply latest quote to model to get expected outcome for latest quote
 - [ ] Store or display expected outcome for latest quote WITH the probability/accuracy of the model.
 
-T
-
-
-
-
 For all stocks in table marked for comparison:
  1. Verify stock exists in sm.company table. If not, run downloader for company.
  1. Gather data from stored procedure for 'x' days of training/testing.
@@ -53,19 +48,19 @@ For all stocks in table marked for comparison:
  1. Setup NN
  1. Train NN (all data between 1 week and 20 weeks ago?)
  1. Test NN (tomorrow)
- 1. Test NN (week)
- 1. Test NN (month)
+ 1. ~~Test NN (week)~~
+ 1. ~~Test NN (month)~~
 
 #### SANNET.DataModel Library
-- [ ] Database creation scripts
-- [ ] ApplicationDbContext
+- [x] Database creation scripts
+- [ ] ISANNETContext
 
 ##### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
 
 ##### Tables
-NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)
-CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
+- [ ] ~~NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)~~
+- [x] CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 ##### Stored Procedures
 - [x] GetRSI (company, period, start & end date arguments)
@@ -78,59 +73,30 @@ CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 - [x] Create User Defined Table type
 - [x] Create FUNCTION that returns table crosses
    
---------------
-``` SQL
--- Inputs: RSI, CCI, SMA, & all associated crosses
--- Outputs: Before the next 5 dates are up, did it:
---          1. Rise 4% or more to trigger sell?
---          2. Fall 2% or more to trigger sell?
---          3. Close at end above the Open?
---          4. Close at end below the Open?
-```
-
 #### SANNET.Business Library
+- [ ] protected class NetworkTrainingDatasetMethod : INetworkTrainingDataset ==> Contains (int methodId, string description)
+- [ ] protected class NetworkTestingDatasetMethod : INetworkTestingDataset ==> Contains (int methodId, string description)
 - [ ] Repositories
    - [ ] TechnicalIndicatorRepository(ISANNETContext)
-      * GetRSIValues(int period) ==> Dictionary<quoteId, RSIValue>
-      * GetCCIValues(int period) ==> Dictionary<quoteId, CCIValue>
-      * GetSMAValues(int period) ==> Dictionary<quoteId, SMAValue>
-      * GetRSICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, RSICrossValue>
-      * GetCCICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, CCICrossValue>
-      * GetSMACrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, SMACrossValue>
+      - [ ] GetRSIValues(int period) ==> Dictionary<quoteId, RSIValue>
+      - [ ] GetCCIValues(int period) ==> Dictionary<quoteId, CCIValue>
+      - [ ] GetSMAValues(int period) ==> Dictionary<quoteId, SMAValue>
+      - [ ] GetRSICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, RSICrossValue>
+      - [ ] GetCCICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, CCICrossValue>
+      - [ ] GetSMACrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, SMACrossValue>
 - [ ] Services
-   - [ ] DatasetService(ITechinicalIndicatorRepository)
-      * GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date.
-      * GetTestingData(Date) ---> Returns the necessary inputs for a specific date that will be inserted into the NN where outputs will be captured.
+   - [ ] DatasetService(ITechnicalIndicatorRepository)
+      - [ ] GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date. Returns NetworkTrainingDatasetMethod with unique id.
+      - [ ] GetTestingDataset1(Date) ---> Returns the necessary inputs for a specific date that will be inserted into the NN where outputs will be captured. Returns NetworkTestingDatasetMethod with unique id.
    - [ ] PredictionService(INeuralNetwork, IDatasetService, IPredictionRepository)
-      * (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date), GeneratePrediction();
-      * GeneratePrediction(id) ---> Gets the training dataset, trains the network, Gets the testing dataset and applys as input to NN. Analyzes results and generates entry in predictions table. Returns prediction??
-      * AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
-      * AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
-      * CreatePrediction()
-      * GetPredictions()
-      * GetPredictionById(id)
-      * UpdatePrediction()
-      * DeletePrediction()
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
+      - [ ] <b>Keep in mind, we MAY have more than 1 dataset method that we want to compare with other datasets.. we need to be able to store predictions for ALL methods.. <i>SOLUTION: NetworkTrainingDatasetMethod & NetworkTestingDatasetMethod</i></b>
+      - [ ] (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date AND uses the same NetworkTrainingDatasetMethod id), GeneratePrediction(quoteId);
+      - [ ] GeneratePrediction(quoteId) ---> Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
+      - [ ] AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
+      - [ ] AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
+      - [ ] CreatePrediction()
+      - [ ] GetPredictions()
+      - [ ] GetPredictionById(id)
+      - [ ] UpdatePrediction()
+      - [ ] DeletePrediction()
    
