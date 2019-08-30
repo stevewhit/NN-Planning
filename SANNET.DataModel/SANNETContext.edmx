@@ -4,7 +4,17 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="SANNET.DataModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="SANNET.DataModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="NetworkConfigurations">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="NumHiddenLayers" Type="int" Nullable="false" />
+          <Property Name="NumHiddenLayerNeurons" Type="int" Nullable="false" />
+          <Property Name="InputNeuronDetails" Type="varchar" MaxLength="1000" Nullable="false" />
+          <Property Name="OutputNeuronDetails" Type="varchar" MaxLength="1000" Nullable="false" />
+        </EntityType>
         <EntityType Name="Predictions">
           <Key>
             <PropertyRef Name="Id" />
@@ -65,10 +75,10 @@
           <Parameter Name="smaPeriodLong" Type="int" Mode="In" />
         </Function>
         <EntityContainer Name="SANNETDataModelStoreContainer">
+          <EntitySet Name="NetworkConfigurations" EntityType="Self.NetworkConfigurations" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Predictions" EntityType="Self.Predictions" Schema="dbo" store:Type="Tables" />
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="SANNET.DataModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -133,6 +143,7 @@
             <Parameter Name="smaPeriodShort" Mode="In" Type="Int32" />
             <Parameter Name="smaPeriodLong" Mode="In" Type="Int32" />
           </FunctionImport>
+          <EntitySet Name="NetworkConfigurations" EntityType="SANNET.DataModel.NetworkConfiguration" />
         </EntityContainer>
         <ComplexType Name="GetCommodityChannelIndexCrosses_Result">
           <Property Type="Int32" Name="QuoteId" Nullable="false" />
@@ -159,6 +170,16 @@
           <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
           <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
         </ComplexType>
+        <EntityType Name="NetworkConfiguration">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
+          <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
+          <Property Name="InputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
+          <Property Name="OutputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -224,6 +245,17 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
+          <EntitySetMapping Name="NetworkConfigurations">
+            <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
+              <MappingFragment StoreEntitySet="NetworkConfigurations">
+                <ScalarProperty Name="OutputNeuronDetails" ColumnName="OutputNeuronDetails" />
+                <ScalarProperty Name="InputNeuronDetails" ColumnName="InputNeuronDetails" />
+                <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
+                <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

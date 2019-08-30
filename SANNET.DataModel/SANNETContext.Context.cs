@@ -28,6 +28,7 @@ namespace SANNET.DataModel
         }
     
         public virtual DbSet<Prediction> Predictions { get; set; }
+        public virtual DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
     
         public virtual int GetCommodityChannelIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriod)
         {

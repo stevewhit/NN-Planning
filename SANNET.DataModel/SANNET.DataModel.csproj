@@ -62,6 +62,9 @@
     <Compile Include="GetSimpleMovingAverageCrosses_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
+    <Compile Include="NetworkConfiguration.cs">
+      <DependentUpon>SANNETContext.tt</DependentUpon>
+    </Compile>
     <Compile Include="Prediction.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
