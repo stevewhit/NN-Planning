@@ -77,13 +77,13 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
 - [ ] protected class NetworkTrainingDatasetMethod : INetworkTrainingDataset ==> Contains (int methodId, string description)
 - [ ] protected class NetworkTestingDatasetMethod : INetworkTestingDataset ==> Contains (int methodId, string description)
 - [ ] Repositories
-   - [ ] TechnicalIndicatorRepository(ISANNETContext)
-      - [ ] GetRSIValues(int period) ==> Dictionary<quoteId, RSIValue>
-      - [ ] GetCCIValues(int period) ==> Dictionary<quoteId, CCIValue>
-      - [ ] GetSMAValues(int period) ==> Dictionary<quoteId, SMAValue>
-      - [ ] GetRSICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, RSICrossValue>
-      - [ ] GetCCICrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, CCICrossValue>
-      - [ ] GetSMACrossValues(int shortPeriod, int longPeriod) ==> Dictionary<quoteId, SMACrossValue>
+   - [x] TechnicalIndicatorRepository(ISANNETContext)
+      - [x] GetRSIValues(int period)
+      - [x] GetCCIValues(int period)
+      - [x] GetSMAValues(int period)
+      - [x] GetRSICrossValues(int shortPeriod, int longPeriod)
+      - [x] GetCCICrossValues(int shortPeriod, int longPeriod)
+      - [x] GetSMACrossValues(int shortPeriod, int longPeriod)
 - [ ] Services
    - [ ] DatasetService(ITechnicalIndicatorRepository)
       - [ ] GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date. Returns NetworkTrainingDatasetMethod with unique id.
@@ -94,9 +94,15 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
       - [ ] GeneratePrediction(quoteId) ---> Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
       - [ ] AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
       - [ ] AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
-      - [ ] CreatePrediction()
-      - [ ] GetPredictions()
-      - [ ] GetPredictionById(id)
-      - [ ] UpdatePrediction()
-      - [ ] DeletePrediction()
+      - [x] CreatePrediction()
+      - [x] GetPredictions()
+      - [x] GetPredictionById(id)
+      - [x] UpdatePrediction()
+      - [x] DeletePrediction()
    
+TODO: 8/30
+- [ ] Add NetworkConfigurations table (int Id, int numInputNeurons, int numHiddenLayers, int NumHiddenLayerNeurons, int numOutputNeurons, string inputsDescription, string outputsDescription)
+- [ ] Add NetworkConfigurationRepository
+- [ ] Add NetworkConfigurationService
+
+
