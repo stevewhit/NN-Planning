@@ -1,0 +1,250 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="SANNET.DataModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Predictions">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CompanySymbol" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="Date" Type="date" Nullable="false" />
+          <Property Name="TrainingStartDate" Type="date" Nullable="false" />
+          <Property Name="TrainingEndDate" Type="date" Nullable="false" />
+          <Property Name="TrainingParameters" Type="nvarchar" MaxLength="250" />
+          <Property Name="Prediction" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Confidence" Type="decimal" Precision="5" Scale="2" Nullable="false" />
+          <Property Name="Outcome" Type="nvarchar" MaxLength="100" />
+        </EntityType>
+        <Function Name="GetCommodityChannelIndex" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="cciPeriod" Type="int" Mode="In" />
+        </Function>
+        <Function Name="GetCommodityChannelIndexCrosses" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="cciPeriodShort" Type="int" Mode="In" />
+          <Parameter Name="cciPeriodLong" Type="int" Mode="In" />
+        </Function>
+        <Function Name="GetFutureFiveDayPerformance" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="date" Type="date" Mode="In" />
+          <Parameter Name="riseMultiplierTrigger" Type="decimal" Mode="In" />
+          <Parameter Name="fallMultiplierTrigger" Type="decimal" Mode="In" />
+        </Function>
+        <Function Name="GetRelativeStrengthIndex" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="rsiPeriod" Type="int" Mode="In" />
+        </Function>
+        <Function Name="GetRelativeStrengthIndexCrosses" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="rsiPeriodShort" Type="int" Mode="In" />
+          <Parameter Name="rsiPeriodLong" Type="int" Mode="In" />
+        </Function>
+        <Function Name="GetSimpleMovingAverage" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="smaPeriod" Type="int" Mode="In" />
+        </Function>
+        <Function Name="GetSimpleMovingAverageCrosses" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="companyId" Type="int" Mode="In" />
+          <Parameter Name="startDate" Type="date" Mode="In" />
+          <Parameter Name="endDate" Type="date" Mode="In" />
+          <Parameter Name="smaPeriodShort" Type="int" Mode="In" />
+          <Parameter Name="smaPeriodLong" Type="int" Mode="In" />
+        </Function>
+        <EntityContainer Name="SANNETDataModelStoreContainer">
+          <EntitySet Name="Predictions" EntityType="Self.Predictions" Schema="dbo" store:Type="Tables" />
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="SANNET.DataModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Prediction">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CompanySymbol" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Date" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="TrainingParameters" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Prediction1" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Confidence" Type="Decimal" Precision="5" Scale="2" Nullable="false" />
+          <Property Name="Outcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityContainer Name="SANNETContext" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Predictions" EntityType="Self.Prediction" />
+          <FunctionImport Name="GetCommodityChannelIndex">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="cciPeriod" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="GetCommodityChannelIndexCrosses" ReturnType="Collection(SANNET.DataModel.GetCommodityChannelIndexCrosses_Result)">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="cciPeriodShort" Mode="In" Type="Int32" />
+            <Parameter Name="cciPeriodLong" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="GetFutureFiveDayPerformance" ReturnType="Collection(SANNET.DataModel.GetFutureFiveDayPerformance_Result)">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="date" Mode="In" Type="DateTime" />
+            <Parameter Name="riseMultiplierTrigger" Mode="In" Type="Decimal" />
+            <Parameter Name="fallMultiplierTrigger" Mode="In" Type="Decimal" />
+          </FunctionImport>
+          <FunctionImport Name="GetRelativeStrengthIndex">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="rsiPeriod" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="GetRelativeStrengthIndexCrosses" ReturnType="Collection(SANNET.DataModel.GetRelativeStrengthIndexCrosses_Result)">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="rsiPeriodShort" Mode="In" Type="Int32" />
+            <Parameter Name="rsiPeriodLong" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="GetSimpleMovingAverage">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="smaPeriod" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <FunctionImport Name="GetSimpleMovingAverageCrosses" ReturnType="Collection(SANNET.DataModel.GetSimpleMovingAverageCrosses_Result)">
+            <Parameter Name="companyId" Mode="In" Type="Int32" />
+            <Parameter Name="startDate" Mode="In" Type="DateTime" />
+            <Parameter Name="endDate" Mode="In" Type="DateTime" />
+            <Parameter Name="smaPeriodShort" Mode="In" Type="Int32" />
+            <Parameter Name="smaPeriodLong" Mode="In" Type="Int32" />
+          </FunctionImport>
+        </EntityContainer>
+        <ComplexType Name="GetCommodityChannelIndexCrosses_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="false" />
+          <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
+          <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="GetFutureFiveDayPerformance_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="true" />
+          <Property Type="Int32" Name="CompanyId" Nullable="true" />
+          <Property Type="DateTime" Name="Date" Nullable="true" />
+          <Property Type="Int32" Name="TriggeredRiseFirst" Nullable="false" />
+          <Property Type="Int32" Name="TriggeredFallFirst" Nullable="false" />
+        </ComplexType>
+        <ComplexType Name="GetRelativeStrengthIndexCrosses_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="false" />
+          <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
+          <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="GetSimpleMovingAverageCrosses_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="false" />
+          <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
+          <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
+        </ComplexType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="SANNETDataModelStoreContainer" CdmEntityContainer="SANNETContext">
+          <EntitySetMapping Name="Predictions">
+            <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
+              <MappingFragment StoreEntitySet="Predictions">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="CompanySymbol" ColumnName="CompanySymbol" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />
+                <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
+                <ScalarProperty Name="TrainingParameters" ColumnName="TrainingParameters" />
+                <ScalarProperty Name="Prediction1" ColumnName="Prediction" />
+                <ScalarProperty Name="Confidence" ColumnName="Confidence" />
+                <ScalarProperty Name="Outcome" ColumnName="Outcome" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="GetCommodityChannelIndex" FunctionName="SANNET.DataModel.Store.GetCommodityChannelIndex" />
+          <FunctionImportMapping FunctionImportName="GetCommodityChannelIndexCrosses" FunctionName="SANNET.DataModel.Store.GetCommodityChannelIndexCrosses">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetCommodityChannelIndexCrosses_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="ConsecutiveDaysShortAboveLong" ColumnName="ConsecutiveDaysShortAboveLong" />
+                <ScalarProperty Name="ConsecutiveDaysLongAboveShort" ColumnName="ConsecutiveDaysLongAboveShort" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetFutureFiveDayPerformance" FunctionName="SANNET.DataModel.Store.GetFutureFiveDayPerformance">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetFutureFiveDayPerformance_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="TriggeredRiseFirst" ColumnName="TriggeredRiseFirst" />
+                <ScalarProperty Name="TriggeredFallFirst" ColumnName="TriggeredFallFirst" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetRelativeStrengthIndex" FunctionName="SANNET.DataModel.Store.GetRelativeStrengthIndex" />
+          <FunctionImportMapping FunctionImportName="GetRelativeStrengthIndexCrosses" FunctionName="SANNET.DataModel.Store.GetRelativeStrengthIndexCrosses">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetRelativeStrengthIndexCrosses_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="ConsecutiveDaysShortAboveLong" ColumnName="ConsecutiveDaysShortAboveLong" />
+                <ScalarProperty Name="ConsecutiveDaysLongAboveShort" ColumnName="ConsecutiveDaysLongAboveShort" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetSimpleMovingAverage" FunctionName="SANNET.DataModel.Store.GetSimpleMovingAverage" />
+          <FunctionImportMapping FunctionImportName="GetSimpleMovingAverageCrosses" FunctionName="SANNET.DataModel.Store.GetSimpleMovingAverageCrosses">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetSimpleMovingAverageCrosses_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="ConsecutiveDaysShortAboveLong" ColumnName="ConsecutiveDaysShortAboveLong" />
+                <ScalarProperty Name="ConsecutiveDaysLongAboveShort" ColumnName="ConsecutiveDaysLongAboveShort" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
