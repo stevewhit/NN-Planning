@@ -27,10 +27,10 @@ namespace SANNET.DataModel
             throw new UnintentionalCodeFirstException();
         }
     
-        public virtual DbSet<Prediction> Predictions { get; set; }
         public virtual DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
+        public virtual DbSet<Prediction> Predictions { get; set; }
     
-        public virtual int GetCommodityChannelIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriod)
+        public virtual ObjectResult<GetCommodityChannelIndex_Result> GetCommodityChannelIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriod)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
@@ -48,7 +48,7 @@ namespace SANNET.DataModel
                 new ObjectParameter("cciPeriod", cciPeriod) :
                 new ObjectParameter("cciPeriod", typeof(int));
     
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("GetCommodityChannelIndex", companyIdParameter, startDateParameter, endDateParameter, cciPeriodParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetCommodityChannelIndex_Result>("GetCommodityChannelIndex", companyIdParameter, startDateParameter, endDateParameter, cciPeriodParameter);
         }
     
         public virtual ObjectResult<GetCommodityChannelIndexCrosses_Result> GetCommodityChannelIndexCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriodShort, Nullable<int> cciPeriodLong)
@@ -97,7 +97,7 @@ namespace SANNET.DataModel
             return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance", companyIdParameter, dateParameter, riseMultiplierTriggerParameter, fallMultiplierTriggerParameter);
         }
     
-        public virtual int GetRelativeStrengthIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> rsiPeriod)
+        public virtual ObjectResult<GetRelativeStrengthIndex_Result> GetRelativeStrengthIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> rsiPeriod)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
@@ -115,7 +115,7 @@ namespace SANNET.DataModel
                 new ObjectParameter("rsiPeriod", rsiPeriod) :
                 new ObjectParameter("rsiPeriod", typeof(int));
     
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("GetRelativeStrengthIndex", companyIdParameter, startDateParameter, endDateParameter, rsiPeriodParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetRelativeStrengthIndex_Result>("GetRelativeStrengthIndex", companyIdParameter, startDateParameter, endDateParameter, rsiPeriodParameter);
         }
     
         public virtual ObjectResult<GetRelativeStrengthIndexCrosses_Result> GetRelativeStrengthIndexCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> rsiPeriodShort, Nullable<int> rsiPeriodLong)
@@ -143,7 +143,7 @@ namespace SANNET.DataModel
             return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetRelativeStrengthIndexCrosses_Result>("GetRelativeStrengthIndexCrosses", companyIdParameter, startDateParameter, endDateParameter, rsiPeriodShortParameter, rsiPeriodLongParameter);
         }
     
-        public virtual int GetSimpleMovingAverage(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> smaPeriod)
+        public virtual ObjectResult<GetSimpleMovingAverage_Result> GetSimpleMovingAverage(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> smaPeriod)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
@@ -161,7 +161,7 @@ namespace SANNET.DataModel
                 new ObjectParameter("smaPeriod", smaPeriod) :
                 new ObjectParameter("smaPeriod", typeof(int));
     
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("GetSimpleMovingAverage", companyIdParameter, startDateParameter, endDateParameter, smaPeriodParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetSimpleMovingAverage_Result>("GetSimpleMovingAverage", companyIdParameter, startDateParameter, endDateParameter, smaPeriodParameter);
         }
     
         public virtual ObjectResult<GetSimpleMovingAverageCrosses_Result> GetSimpleMovingAverageCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> smaPeriodShort, Nullable<int> smaPeriodLong)

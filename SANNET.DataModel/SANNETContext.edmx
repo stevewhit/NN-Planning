@@ -20,15 +20,27 @@
             <PropertyRef Name="Id" />
           </Key>
           <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="CompanySymbol" Type="nvarchar" MaxLength="20" Nullable="false" />
-          <Property Name="Date" Type="date" Nullable="false" />
+          <Property Name="ConfigurationId" Type="int" Nullable="false" />
+          <Property Name="CompanyId" Type="int" Nullable="false" />
+          <Property Name="QuoteId" Type="int" Nullable="false" />
           <Property Name="TrainingStartDate" Type="date" Nullable="false" />
           <Property Name="TrainingEndDate" Type="date" Nullable="false" />
-          <Property Name="TrainingParameters" Type="nvarchar" MaxLength="250" />
-          <Property Name="Prediction" Type="nvarchar" MaxLength="100" Nullable="false" />
-          <Property Name="Confidence" Type="decimal" Precision="5" Scale="2" Nullable="false" />
+          <Property Name="PredictedOutcome" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="PredictionConfidence" Type="decimal" Precision="5" Scale="2" Nullable="false" />
           <Property Name="Outcome" Type="nvarchar" MaxLength="100" />
         </EntityType>
+        <Association Name="FK_Predictions_NetworkConfigurations">
+          <End Role="NetworkConfigurations" Type="Self.NetworkConfigurations" Multiplicity="1" />
+          <End Role="Predictions" Type="Self.Predictions" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NetworkConfigurations">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Predictions">
+              <PropertyRef Name="ConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Function Name="GetCommodityChannelIndex" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
           <Parameter Name="companyId" Type="int" Mode="In" />
           <Parameter Name="startDate" Type="date" Mode="In" />
@@ -77,28 +89,23 @@
         <EntityContainer Name="SANNETDataModelStoreContainer">
           <EntitySet Name="NetworkConfigurations" EntityType="Self.NetworkConfigurations" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Predictions" EntityType="Self.Predictions" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_Predictions_NetworkConfigurations" Association="Self.FK_Predictions_NetworkConfigurations">
+            <End Role="NetworkConfigurations" EntitySet="NetworkConfigurations" />
+            <End Role="Predictions" EntitySet="Predictions" />
+          </AssociationSet>
         </EntityContainer>
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="SANNET.DataModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
-        <EntityType Name="Prediction">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="CompanySymbol" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="Date" Type="DateTime" Nullable="false" Precision="0" />
-          <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
-          <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
-          <Property Name="TrainingParameters" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
-          <Property Name="Prediction1" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="Confidence" Type="Decimal" Precision="5" Scale="2" Nullable="false" />
-          <Property Name="Outcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
-        </EntityType>
         <EntityContainer Name="SANNETContext" annotation:LazyLoadingEnabled="true">
-          <EntitySet Name="Predictions" EntityType="Self.Prediction" />
-          <FunctionImport Name="GetCommodityChannelIndex">
+          <EntitySet Name="NetworkConfigurations" EntityType="SANNET.DataModel.NetworkConfiguration" />
+          <EntitySet Name="Predictions" EntityType="SANNET.DataModel.Prediction" />
+          <AssociationSet Name="FK_Predictions_NetworkConfigurations" Association="SANNET.DataModel.FK_Predictions_NetworkConfigurations">
+            <End Role="NetworkConfiguration" EntitySet="NetworkConfigurations" />
+            <End Role="Prediction" EntitySet="Predictions" />
+          </AssociationSet>
+          <FunctionImport Name="GetCommodityChannelIndex" ReturnType="Collection(SANNET.DataModel.GetCommodityChannelIndex_Result)">
             <Parameter Name="companyId" Mode="In" Type="Int32" />
             <Parameter Name="startDate" Mode="In" Type="DateTime" />
             <Parameter Name="endDate" Mode="In" Type="DateTime" />
@@ -117,7 +124,7 @@
             <Parameter Name="riseMultiplierTrigger" Mode="In" Type="Decimal" />
             <Parameter Name="fallMultiplierTrigger" Mode="In" Type="Decimal" />
           </FunctionImport>
-          <FunctionImport Name="GetRelativeStrengthIndex">
+          <FunctionImport Name="GetRelativeStrengthIndex" ReturnType="Collection(SANNET.DataModel.GetRelativeStrengthIndex_Result)">
             <Parameter Name="companyId" Mode="In" Type="Int32" />
             <Parameter Name="startDate" Mode="In" Type="DateTime" />
             <Parameter Name="endDate" Mode="In" Type="DateTime" />
@@ -130,7 +137,7 @@
             <Parameter Name="rsiPeriodShort" Mode="In" Type="Int32" />
             <Parameter Name="rsiPeriodLong" Mode="In" Type="Int32" />
           </FunctionImport>
-          <FunctionImport Name="GetSimpleMovingAverage">
+          <FunctionImport Name="GetSimpleMovingAverage" ReturnType="Collection(SANNET.DataModel.GetSimpleMovingAverage_Result)">
             <Parameter Name="companyId" Mode="In" Type="Int32" />
             <Parameter Name="startDate" Mode="In" Type="DateTime" />
             <Parameter Name="endDate" Mode="In" Type="DateTime" />
@@ -143,8 +150,51 @@
             <Parameter Name="smaPeriodShort" Mode="In" Type="Int32" />
             <Parameter Name="smaPeriodLong" Mode="In" Type="Int32" />
           </FunctionImport>
-          <EntitySet Name="NetworkConfigurations" EntityType="SANNET.DataModel.NetworkConfiguration" />
         </EntityContainer>
+        <EntityType Name="NetworkConfiguration">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
+          <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
+          <Property Name="InputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
+          <Property Name="OutputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
+          <NavigationProperty Name="Predictions" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="NetworkConfiguration" ToRole="Prediction" />
+        </EntityType>
+        <EntityType Name="Prediction">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ConfigurationId" Type="Int32" Nullable="false" />
+          <Property Name="CompanyId" Type="Int32" Nullable="false" />
+          <Property Name="QuoteId" Type="Int32" Nullable="false" />
+          <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="PredictedOutcome" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="PredictionConfidence" Type="Decimal" Nullable="false" Precision="5" Scale="2" />
+          <Property Name="Outcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="NetworkConfiguration" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="Prediction" ToRole="NetworkConfiguration" />
+        </EntityType>
+        <Association Name="FK_Predictions_NetworkConfigurations">
+          <End Type="SANNET.DataModel.NetworkConfiguration" Role="NetworkConfiguration" Multiplicity="1" />
+          <End Type="SANNET.DataModel.Prediction" Role="Prediction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NetworkConfiguration">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Prediction">
+              <PropertyRef Name="ConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <ComplexType Name="GetCommodityChannelIndex_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="true" />
+          <Property Type="Int32" Name="CompanyId" Nullable="true" />
+          <Property Type="DateTime" Name="Date" Nullable="true" />
+          <Property Type="Decimal" Name="CCI" Nullable="true" Precision="37" Scale="21" />
+        </ComplexType>
         <ComplexType Name="GetCommodityChannelIndexCrosses_Result">
           <Property Type="Int32" Name="QuoteId" Nullable="false" />
           <Property Type="DateTime" Name="Date" Nullable="false" />
@@ -158,11 +208,24 @@
           <Property Type="Int32" Name="TriggeredRiseFirst" Nullable="false" />
           <Property Type="Int32" Name="TriggeredFallFirst" Nullable="false" />
         </ComplexType>
+        <ComplexType Name="GetRelativeStrengthIndex_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="true" />
+          <Property Type="Int32" Name="CompanyId" Nullable="true" />
+          <Property Type="DateTime" Name="Date" Nullable="true" />
+          <Property Type="Decimal" Name="RSI" Nullable="true" Precision="24" Scale="16" />
+        </ComplexType>
         <ComplexType Name="GetRelativeStrengthIndexCrosses_Result">
           <Property Type="Int32" Name="QuoteId" Nullable="false" />
           <Property Type="DateTime" Name="Date" Nullable="false" />
           <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
           <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="GetSimpleMovingAverage_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="false" />
+          <Property Type="Int32" Name="CompanyId" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="false" Precision="23" />
+          <Property Type="Decimal" Name="Close" Nullable="false" Precision="10" Scale="2" />
+          <Property Type="Decimal" Name="SMA" Nullable="true" Precision="38" Scale="6" />
         </ComplexType>
         <ComplexType Name="GetSimpleMovingAverageCrosses_Result">
           <Property Type="Int32" Name="QuoteId" Nullable="false" />
@@ -170,38 +233,48 @@
           <Property Type="Int32" Name="ConsecutiveDaysShortAboveLong" Nullable="true" />
           <Property Type="Int32" Name="ConsecutiveDaysLongAboveShort" Nullable="true" />
         </ComplexType>
-        <EntityType Name="NetworkConfiguration">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
-          <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
-          <Property Name="InputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
-          <Property Name="OutputNeuronDetails" Type="String" Nullable="false" MaxLength="1000" FixedLength="false" Unicode="false" />
-        </EntityType>
-      </Schema>
+        </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
         <EntityContainerMapping StorageEntityContainer="SANNETDataModelStoreContainer" CdmEntityContainer="SANNETContext">
-          <EntitySetMapping Name="Predictions">
-            <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
-              <MappingFragment StoreEntitySet="Predictions">
+          <EntitySetMapping Name="NetworkConfigurations">
+            <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
+              <MappingFragment StoreEntitySet="NetworkConfigurations">
+                <ScalarProperty Name="OutputNeuronDetails" ColumnName="OutputNeuronDetails" />
+                <ScalarProperty Name="InputNeuronDetails" ColumnName="InputNeuronDetails" />
+                <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
+                <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="CompanySymbol" ColumnName="CompanySymbol" />
-                <ScalarProperty Name="Date" ColumnName="Date" />
-                <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />
-                <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
-                <ScalarProperty Name="TrainingParameters" ColumnName="TrainingParameters" />
-                <ScalarProperty Name="Prediction1" ColumnName="Prediction" />
-                <ScalarProperty Name="Confidence" ColumnName="Confidence" />
-                <ScalarProperty Name="Outcome" ColumnName="Outcome" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <FunctionImportMapping FunctionImportName="GetCommodityChannelIndex" FunctionName="SANNET.DataModel.Store.GetCommodityChannelIndex" />
+          <EntitySetMapping Name="Predictions">
+            <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
+              <MappingFragment StoreEntitySet="Predictions">
+                <ScalarProperty Name="Outcome" ColumnName="Outcome" />
+                <ScalarProperty Name="PredictionConfidence" ColumnName="PredictionConfidence" />
+                <ScalarProperty Name="PredictedOutcome" ColumnName="PredictedOutcome" />
+                <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
+                <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="ConfigurationId" ColumnName="ConfigurationId" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="GetCommodityChannelIndex" FunctionName="SANNET.DataModel.Store.GetCommodityChannelIndex">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetCommodityChannelIndex_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="CCI" ColumnName="CCI" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
           <FunctionImportMapping FunctionImportName="GetCommodityChannelIndexCrosses" FunctionName="SANNET.DataModel.Store.GetCommodityChannelIndexCrosses">
             <ResultMapping>
               <ComplexTypeMapping TypeName="SANNET.DataModel.GetCommodityChannelIndexCrosses_Result">
@@ -223,7 +296,16 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="GetRelativeStrengthIndex" FunctionName="SANNET.DataModel.Store.GetRelativeStrengthIndex" />
+          <FunctionImportMapping FunctionImportName="GetRelativeStrengthIndex" FunctionName="SANNET.DataModel.Store.GetRelativeStrengthIndex">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetRelativeStrengthIndex_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="RSI" ColumnName="RSI" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
           <FunctionImportMapping FunctionImportName="GetRelativeStrengthIndexCrosses" FunctionName="SANNET.DataModel.Store.GetRelativeStrengthIndexCrosses">
             <ResultMapping>
               <ComplexTypeMapping TypeName="SANNET.DataModel.GetRelativeStrengthIndexCrosses_Result">
@@ -234,7 +316,17 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="GetSimpleMovingAverage" FunctionName="SANNET.DataModel.Store.GetSimpleMovingAverage" />
+          <FunctionImportMapping FunctionImportName="GetSimpleMovingAverage" FunctionName="SANNET.DataModel.Store.GetSimpleMovingAverage">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetSimpleMovingAverage_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="Close" ColumnName="Close" />
+                <ScalarProperty Name="SMA" ColumnName="SMA" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
           <FunctionImportMapping FunctionImportName="GetSimpleMovingAverageCrosses" FunctionName="SANNET.DataModel.Store.GetSimpleMovingAverageCrosses">
             <ResultMapping>
               <ComplexTypeMapping TypeName="SANNET.DataModel.GetSimpleMovingAverageCrosses_Result">
@@ -245,17 +337,6 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
-          <EntitySetMapping Name="NetworkConfigurations">
-            <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
-              <MappingFragment StoreEntitySet="NetworkConfigurations">
-                <ScalarProperty Name="OutputNeuronDetails" ColumnName="OutputNeuronDetails" />
-                <ScalarProperty Name="InputNeuronDetails" ColumnName="InputNeuronDetails" />
-                <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
-                <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
-                <ScalarProperty Name="Id" ColumnName="Id" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

@@ -14,10 +14,19 @@ namespace SANNET.DataModel
     
     public partial class NetworkConfiguration
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public NetworkConfiguration()
+        {
+            this.Predictions = new HashSet<Prediction>();
+        }
+    
         public int Id { get; set; }
         public int NumHiddenLayers { get; set; }
         public int NumHiddenLayerNeurons { get; set; }
         public string InputNeuronDetails { get; set; }
         public string OutputNeuronDetails { get; set; }
+    
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Prediction> Predictions { get; set; }
     }
 }

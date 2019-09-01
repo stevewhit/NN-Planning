@@ -27,19 +27,15 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	/* Calculate the SMA over the @smaPeriod for each quote */
-	DECLARE @sql nvarchar(max) = 
-		N'SELECT [Id] as [QuoteId],
-				 [CompanyId],
-				 [Date],
-				 AVG([Close]) OVER (ORDER BY [Id] ROWS ' + convert(varchar, @smaPeriod) +' PRECEDING) as [SMA]
-		  FROM StockMarketData.dbo.Quotes
-		  WHERE [CompanyId] = ' + convert(varchar, @companyId) + ' AND [Date] >= ''' + convert(varchar, @startDate) + ''' AND [Date] <= ''' + convert(varchar, @endDate) + ''' 
-		  ORDER BY [Date]'
-	EXEC sp_executesql @sql
+	SELECT [Id] as [QuoteId],
+			[CompanyId],
+			[Date],
+			[Close],
+			(SELECT AVG(CloseInner) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[CompanyId] = @companyId AND quotesInner.[Date] >= @startDate AND quotesInner.[Date] <= @endDate AND quotesInner.[Id] <= quotesOuter.[Id] AND quotesInner.[Id] >= (quotesOuter.[Id] - @smaPeriod)) as MovingAverageInner) as [SMA]
+	FROM StockMarketData.dbo.Quotes quotesOuter
+	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate 
+	ORDER BY [Date]
 END
-
-
 GO
 
 

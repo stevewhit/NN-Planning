@@ -15,13 +15,15 @@ namespace SANNET.DataModel
     public partial class Prediction
     {
         public int Id { get; set; }
-        public string CompanySymbol { get; set; }
-        public System.DateTime Date { get; set; }
+        public int ConfigurationId { get; set; }
+        public int CompanyId { get; set; }
+        public int QuoteId { get; set; }
         public System.DateTime TrainingStartDate { get; set; }
         public System.DateTime TrainingEndDate { get; set; }
-        public string TrainingParameters { get; set; }
-        public string Prediction1 { get; set; }
-        public decimal Confidence { get; set; }
+        public string PredictedOutcome { get; set; }
+        public decimal PredictionConfidence { get; set; }
         public string Outcome { get; set; }
+    
+        public virtual NetworkConfiguration NetworkConfiguration { get; set; }
     }
 }
