@@ -53,13 +53,13 @@ For all stocks in table marked for comparison:
 
 #### SANNET.DataModel Library
 - [x] Database creation scripts
-- [ ] ISANNETContext
+- [x] ISANNETContext
 
 ##### SANNET Database
 Tables, views, and stored procedures that should reside in the SANNET.DataModel library
 
 ##### Tables
-- [ ] ~~NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)~~
+- [x] NeuralNetworkConfigurations (Id [PK], Inputs, Outputs, NumHiddenLayers, NumHiddenLayerNeurons, TrainingStartDate, TrainingEndDate, TestingStartDate, TestingEndDate, Indicators)
 - [x] CompanyPredictions (Id [PK], CompanyId [FK], ConfigId [FK], Prediction)
 
 ##### Stored Procedures
@@ -74,8 +74,6 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
 - [x] Create FUNCTION that returns table crosses
    
 #### SANNET.Business Library
-- [ ] protected class NetworkTrainingDatasetMethod : INetworkTrainingDataset ==> Contains (int methodId, string description)
-- [ ] protected class NetworkTestingDatasetMethod : INetworkTestingDataset ==> Contains (int methodId, string description)
 - [ ] Repositories
    - [x] TechnicalIndicatorRepository(ISANNETContext)
       - [x] GetRSIValues(int period)
@@ -88,10 +86,10 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
    - [ ] DatasetService(ITechnicalIndicatorRepository)
       - [ ] GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date. Returns NetworkTrainingDatasetMethod with unique id.
       - [ ] GetTestingDataset1(Date) ---> Returns the necessary inputs for a specific date that will be inserted into the NN where outputs will be captured. Returns NetworkTestingDatasetMethod with unique id.
-   - [ ] PredictionService(INeuralNetwork, IDatasetService, IPredictionRepository)
-      - [ ] <b>Keep in mind, we MAY have more than 1 dataset method that we want to compare with other datasets.. we need to be able to store predictions for ALL methods.. <i>SOLUTION: NetworkTrainingDatasetMethod & NetworkTestingDatasetMethod</i></b>
-      - [ ] (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date AND uses the same NetworkTrainingDatasetMethod id), GeneratePrediction(quoteId);
-      - [ ] GeneratePrediction(quoteId) ---> Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
+   - [x] PredictionService(INeuralNetwork, IDatasetService, IPredictionRepository)
+      - [x] <b>Keep in mind, we MAY have more than 1 dataset method that we want to compare with other datasets.. we need to be able to store predictions for ALL methods.. <i>SOLUTION: NetworkTrainingDatasetMethod & NetworkTestingDatasetMethod</i></b>
+      - [x] (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date AND uses the same NetworkTrainingDatasetMethod id), GeneratePrediction(quoteId);
+      - [x] GeneratePrediction(quoteId) ---> Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
       - [ ] AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
       - [ ] AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
       - [x] CreatePrediction()
@@ -99,10 +97,3 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
       - [x] GetPredictionById(id)
       - [x] UpdatePrediction()
       - [x] DeletePrediction()
-   
-TODO: 8/30
-- [ ] Add NetworkConfigurations table (int Id, int numInputNeurons, int numHiddenLayers, int NumHiddenLayerNeurons, int numOutputNeurons, string inputsDescription, string outputsDescription)
-- [ ] Add NetworkConfigurationRepository
-- [ ] Add NetworkConfigurationService
-
-
