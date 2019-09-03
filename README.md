@@ -78,6 +78,7 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
    - [ ] DatasetRepository(IEfContext)
       - [ ] GetTrainingDataset(configurationId, companyId, startDate, endDate)
       - [ ] GetTrainingDataset1(companyId, startDate, endDate)
+         - [ ] Add future 5 day performance to dataset1 procedure outputs.
       - [ ] GetTrainingDataset2(companyId, startDate, endDate)
       - [ ] GetFiveDayFuturePerformance(companyId, date)
 - [ ] Services
