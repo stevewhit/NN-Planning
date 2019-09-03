@@ -27,6 +27,8 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
+	-- Verified 09/02/2019 --
+
 	/*********************************************************************************************
 		Table to hold CCI typical price calculations for the @cciPeriod.
 	*********************************************************************************************/
@@ -62,7 +64,7 @@ BEGIN
 	SELECT [QuoteId],
 		   [Date],
 		   [TypicalPrice],
-		   (SELECT AVG(TypicalPrice) FROM (SELECT [TypicalPrice] FROM @typicalPriceCalcs typicalPriceInner WHERE typicalPriceInner.QuoteId <= typicalPriceOuter.QuoteId AND typicalPriceInner.QuoteId >= (typicalPriceOuter.QuoteId - @cciPeriod)) as MovingAverageInner) as [MovingAverage]
+		   (SELECT AVG(TypicalPrice) FROM (SELECT [TypicalPrice] FROM @typicalPriceCalcs typicalPriceInner WHERE typicalPriceInner.QuoteId <= typicalPriceOuter.QuoteId AND typicalPriceInner.QuoteId >= (typicalPriceOuter.QuoteId - @cciPeriod + 1)) as MovingAverageInner) as [MovingAverage]
 	FROM @typicalPriceCalcs typicalPriceOuter
 	ORDER BY [Date]
 
@@ -79,10 +81,13 @@ BEGIN
 	INSERT INTO @cciMeanDeviationCalcs
 	SELECT [QuoteId],
 		   [Date],
-		   (SELECT AVG(ABS(TypicalPrice - MovingAverage)) FROM (SELECT [TypicalPrice], [MovingAverage] FROM @movingAvgCalcs movingAverageInner WHERE movingAverageInner.QuoteId <= movingAverageOuter.QuoteId AND movingAverageInner.QuoteId >= (movingAverageOuter.QuoteId - @cciPeriod)) as MovingAverageInner) as [MovingAverage]
+		   (SELECT AVG(ABS(TypicalPrice - MovingAverageOuter)) 
+		    FROM (SELECT [TypicalPrice], 
+						 movingAverageOuter.MovingAverage as [MovingAverageOuter]
+			      FROM @movingAvgCalcs movingAverageInner 
+				  WHERE movingAverageInner.QuoteId <= movingAverageOuter.QuoteId AND movingAverageInner.QuoteId >= (movingAverageOuter.QuoteId - @cciPeriod + 1)) as MovingAverageInner) as [MeanDeviation]
 	FROM @movingAvgCalcs movingAverageOuter
 	ORDER BY [Date]
-
 
 	/*********************************************************************************************
 		Table to hold the CCI values over the @cciPeriod for each quote. 
@@ -102,7 +107,7 @@ BEGIN
 		INNER JOIN @movingAvgCalcs movingAvgCalcs ON typicalPriceCalcs.QuoteId = movingAvgCalcs.QuoteId
 		INNER JOIN @cciMeanDeviationCalcs meanDeviationCalcs on typicalPriceCalcs.QuoteId = meanDeviationCalcs.QuoteId
 		--INNER JOIN StockMarketData.dbo.Quotes quotes on quotes.Id = typicalPriceCalcs.QuoteId
-	WHERE typicalPriceCalcs.[Date] >= @startDate AND typicalPriceCalcs.[Date] <= @endDate
+	WHERE typicalPriceCalcs.CompanyId = @companyId AND typicalPriceCalcs.[Date] >= @startDate AND typicalPriceCalcs.[Date] <= @endDate
 	ORDER BY typicalPriceCalcs.[Date]
 END
 GO

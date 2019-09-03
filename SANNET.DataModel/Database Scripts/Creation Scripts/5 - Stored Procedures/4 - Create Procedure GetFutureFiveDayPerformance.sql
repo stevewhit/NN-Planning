@@ -77,7 +77,7 @@ BEGIN
 		   CASE WHEN [FiveDayOutcomeType] = 1 THEN 1 ELSE 0 END as [TriggeredRiseFirst],
 		   CASE WHEN [FiveDayOutcomeType] = -1 THEN 1 ELSE 0 END as [TriggeredFallFirst]
 	FROM @fiveDayPerformance
-	WHERE [CompanyId] = @companyId-- AND [Date] = @date--[Date] >= @date AND [Date] <= @endDate
+	WHERE [CompanyId] = @companyId AND [Date] = @date
 	ORDER BY [Date]
 END
 GO

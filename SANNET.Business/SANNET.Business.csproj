@@ -48,22 +48,37 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Repositories\DatasetRepository.cs" />
+    <Compile Include="Services\CompanyService.cs" />
+    <Compile Include="Services\DatasetService.cs" />
     <Compile Include="Services\NetworkConfigurationService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\PredictionService.cs" />
+    <Compile Include="Services\QuoteService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Framework.Generic\Framework.Generic\Framework.Generic.csproj">
       <Project>{90236CE3-7B97-457A-8BC2-9ACAED973488}</Project>
       <Name>Framework.Generic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\NeuralNetwork.Generic\NeuralNetwork.Generic\NeuralNetwork.Generic.csproj">
+      <Project>{A5B43882-B231-404B-82FE-C5F5E0DC15D2}</Project>
+      <Name>NeuralNetwork.Generic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\StockMarket.Generic\StockMarket.DataModel\StockMarket.DataModel.csproj">
+      <Project>{6EC15FB7-894B-475C-BA2A-FB556D9D9832}</Project>
+      <Name>StockMarket.DataModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\StockMarket.Generic\StockMarket.Generic\StockMarket.Generic.csproj">
+      <Project>{6BF1D85B-51F7-471E-8EE3-438E76D832B6}</Project>
+      <Name>StockMarket.Generic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SANNET.DataModel\SANNET.DataModel.csproj">
       <Project>{FC1EAD7C-6004-4033-946A-5ACCA614CAD1}</Project>
       <Name>SANNET.DataModel</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Repositories\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />

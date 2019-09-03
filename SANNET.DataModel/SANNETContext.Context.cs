@@ -30,52 +30,6 @@ namespace SANNET.DataModel
         public virtual DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
         public virtual DbSet<Prediction> Predictions { get; set; }
     
-        public virtual ObjectResult<GetCommodityChannelIndex_Result> GetCommodityChannelIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriod)
-        {
-            var companyIdParameter = companyId.HasValue ?
-                new ObjectParameter("companyId", companyId) :
-                new ObjectParameter("companyId", typeof(int));
-    
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
-    
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
-    
-            var cciPeriodParameter = cciPeriod.HasValue ?
-                new ObjectParameter("cciPeriod", cciPeriod) :
-                new ObjectParameter("cciPeriod", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetCommodityChannelIndex_Result>("GetCommodityChannelIndex", companyIdParameter, startDateParameter, endDateParameter, cciPeriodParameter);
-        }
-    
-        public virtual ObjectResult<GetCommodityChannelIndexCrosses_Result> GetCommodityChannelIndexCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> cciPeriodShort, Nullable<int> cciPeriodLong)
-        {
-            var companyIdParameter = companyId.HasValue ?
-                new ObjectParameter("companyId", companyId) :
-                new ObjectParameter("companyId", typeof(int));
-    
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
-    
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
-    
-            var cciPeriodShortParameter = cciPeriodShort.HasValue ?
-                new ObjectParameter("cciPeriodShort", cciPeriodShort) :
-                new ObjectParameter("cciPeriodShort", typeof(int));
-    
-            var cciPeriodLongParameter = cciPeriodLong.HasValue ?
-                new ObjectParameter("cciPeriodLong", cciPeriodLong) :
-                new ObjectParameter("cciPeriodLong", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetCommodityChannelIndexCrosses_Result>("GetCommodityChannelIndexCrosses", companyIdParameter, startDateParameter, endDateParameter, cciPeriodShortParameter, cciPeriodLongParameter);
-        }
-    
         public virtual ObjectResult<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(Nullable<int> companyId, Nullable<System.DateTime> date, Nullable<decimal> riseMultiplierTrigger, Nullable<decimal> fallMultiplierTrigger)
         {
             var companyIdParameter = companyId.HasValue ?
@@ -97,7 +51,7 @@ namespace SANNET.DataModel
             return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance", companyIdParameter, dateParameter, riseMultiplierTriggerParameter, fallMultiplierTriggerParameter);
         }
     
-        public virtual ObjectResult<GetRelativeStrengthIndex_Result> GetRelativeStrengthIndex(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> rsiPeriod)
+        public virtual ObjectResult<GetTrainingDataset1_Result> GetTrainingDataset1(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
@@ -111,82 +65,7 @@ namespace SANNET.DataModel
                 new ObjectParameter("endDate", endDate) :
                 new ObjectParameter("endDate", typeof(System.DateTime));
     
-            var rsiPeriodParameter = rsiPeriod.HasValue ?
-                new ObjectParameter("rsiPeriod", rsiPeriod) :
-                new ObjectParameter("rsiPeriod", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetRelativeStrengthIndex_Result>("GetRelativeStrengthIndex", companyIdParameter, startDateParameter, endDateParameter, rsiPeriodParameter);
-        }
-    
-        public virtual ObjectResult<GetRelativeStrengthIndexCrosses_Result> GetRelativeStrengthIndexCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> rsiPeriodShort, Nullable<int> rsiPeriodLong)
-        {
-            var companyIdParameter = companyId.HasValue ?
-                new ObjectParameter("companyId", companyId) :
-                new ObjectParameter("companyId", typeof(int));
-    
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
-    
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
-    
-            var rsiPeriodShortParameter = rsiPeriodShort.HasValue ?
-                new ObjectParameter("rsiPeriodShort", rsiPeriodShort) :
-                new ObjectParameter("rsiPeriodShort", typeof(int));
-    
-            var rsiPeriodLongParameter = rsiPeriodLong.HasValue ?
-                new ObjectParameter("rsiPeriodLong", rsiPeriodLong) :
-                new ObjectParameter("rsiPeriodLong", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetRelativeStrengthIndexCrosses_Result>("GetRelativeStrengthIndexCrosses", companyIdParameter, startDateParameter, endDateParameter, rsiPeriodShortParameter, rsiPeriodLongParameter);
-        }
-    
-        public virtual ObjectResult<GetSimpleMovingAverage_Result> GetSimpleMovingAverage(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> smaPeriod)
-        {
-            var companyIdParameter = companyId.HasValue ?
-                new ObjectParameter("companyId", companyId) :
-                new ObjectParameter("companyId", typeof(int));
-    
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
-    
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
-    
-            var smaPeriodParameter = smaPeriod.HasValue ?
-                new ObjectParameter("smaPeriod", smaPeriod) :
-                new ObjectParameter("smaPeriod", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetSimpleMovingAverage_Result>("GetSimpleMovingAverage", companyIdParameter, startDateParameter, endDateParameter, smaPeriodParameter);
-        }
-    
-        public virtual ObjectResult<GetSimpleMovingAverageCrosses_Result> GetSimpleMovingAverageCrosses(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<int> smaPeriodShort, Nullable<int> smaPeriodLong)
-        {
-            var companyIdParameter = companyId.HasValue ?
-                new ObjectParameter("companyId", companyId) :
-                new ObjectParameter("companyId", typeof(int));
-    
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
-    
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
-    
-            var smaPeriodShortParameter = smaPeriodShort.HasValue ?
-                new ObjectParameter("smaPeriodShort", smaPeriodShort) :
-                new ObjectParameter("smaPeriodShort", typeof(int));
-    
-            var smaPeriodLongParameter = smaPeriodLong.HasValue ?
-                new ObjectParameter("smaPeriodLong", smaPeriodLong) :
-                new ObjectParameter("smaPeriodLong", typeof(int));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetSimpleMovingAverageCrosses_Result>("GetSimpleMovingAverageCrosses", companyIdParameter, startDateParameter, endDateParameter, smaPeriodShortParameter, smaPeriodLongParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetTrainingDataset1_Result>("GetTrainingDataset1", companyIdParameter, startDateParameter, endDateParameter);
         }
     }
 }

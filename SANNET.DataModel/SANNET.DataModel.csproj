@@ -50,25 +50,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GetCommodityChannelIndexCrosses_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
-    <Compile Include="GetCommodityChannelIndex_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
     <Compile Include="GetFutureFiveDayPerformance_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="GetRelativeStrengthIndexCrosses_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
-    <Compile Include="GetRelativeStrengthIndex_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
-    <Compile Include="GetSimpleMovingAverageCrosses_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
-    <Compile Include="GetSimpleMovingAverage_Result.cs">
+    <Compile Include="GetTrainingDataset1_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
     <Compile Include="NetworkConfiguration.cs">

@@ -5,8 +5,8 @@ BEGIN
 	CREATE TABLE [dbo].[Predictions](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[ConfigurationId] [int] NOT NULL,
-	[CompanyId] INT NOT NULL,
-	[QuoteId] INT NOT NULL,
+	[CompanyId] [int] NOT NULL,
+	[QuoteId] [int] NOT NULL,
 	[TrainingStartDate] [date] NOT NULL,
 	[TrainingEndDate] [date] NOT NULL,
 	[PredictedOutcome] [nvarchar](100) NOT NULL,

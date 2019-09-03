@@ -27,15 +27,23 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT [Id] as [QuoteId],
-			[CompanyId],
-			[Date],
-			[Close],
-			(SELECT AVG(CloseInner) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[CompanyId] = @companyId AND quotesInner.[Date] >= @startDate AND quotesInner.[Date] <= @endDate AND quotesInner.[Id] <= quotesOuter.[Id] AND quotesInner.[Id] >= (quotesOuter.[Id] - @smaPeriod)) as MovingAverageInner) as [SMA]
-	FROM StockMarketData.dbo.Quotes quotesOuter
+	-- Verified 09/02/2019 --
+
+	SELECT [QuoteId],
+		   [CompanyId],
+		   [Date],
+		   [Close],
+		   [SMA]
+	FROM (SELECT [Id] as [QuoteId],
+				[CompanyId],
+				[Date],
+				[Close],
+				(SELECT AVG(CloseInner) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[CompanyId] = @companyId AND quotesInner.[Id] <= quotesOuter.[Id] AND quotesInner.[Id] >= (quotesOuter.[Id] - @smaPeriod + 1)) as MovingAverageInner) as [SMA]
+		  FROM StockMarketData.dbo.Quotes quotesOuter
+		  WHERE [CompanyId] = @companyId) smaEntire
 	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate 
-	ORDER BY [Date]
 END
+
 GO
 
 
