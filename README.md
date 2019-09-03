@@ -75,25 +75,12 @@ Tables, views, and stored procedures that should reside in the SANNET.DataModel 
    
 #### SANNET.Business Library
 - [ ] Repositories
-   - [x] TechnicalIndicatorRepository(ISANNETContext)
-      - [x] GetRSIValues(int period)
-      - [x] GetCCIValues(int period)
-      - [x] GetSMAValues(int period)
-      - [x] GetRSICrossValues(int shortPeriod, int longPeriod)
-      - [x] GetCCICrossValues(int shortPeriod, int longPeriod)
-      - [x] GetSMACrossValues(int shortPeriod, int longPeriod)
+   - [ ] DatasetRepository(IEfContext)
+      - [ ] GetTrainingDataset(configurationId, companyId, startDate, endDate)
+      - [ ] GetTrainingDataset1(companyId, startDate, endDate)
+      - [ ] GetTrainingDataset2(companyId, startDate, endDate)
+      - [ ] GetFiveDayFuturePerformance(companyId, date)
 - [ ] Services
-   - [ ] DatasetService(ITechnicalIndicatorRepository)
-      - [ ] GetTrainingDataset1(Date) ---> Returns ~2 months worth of NN training data to train for a specific date. Returns NetworkTrainingDatasetMethod with unique id.
-      - [ ] GetTestingDataset1(Date) ---> Returns the necessary inputs for a specific date that will be inserted into the NN where outputs will be captured. Returns NetworkTestingDatasetMethod with unique id.
-   - [x] PredictionService(INeuralNetwork, IDatasetService, IPredictionRepository)
-      - [x] <b>Keep in mind, we MAY have more than 1 dataset method that we want to compare with other datasets.. we need to be able to store predictions for ALL methods.. <i>SOLUTION: NetworkTrainingDatasetMethod & NetworkTestingDatasetMethod</i></b>
-      - [x] (From Main) GeneratePredictions() ---> Foreach(company quote date that doesn't already have a matching prediction date AND uses the same NetworkTrainingDatasetMethod id), GeneratePrediction(quoteId);
-      - [x] GeneratePrediction(quoteId) ---> Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
-      - [ ] AnalyzePredictions() ---> Foreach prediction without an outcome (outside the 5-day window!), AnalyzePrediction();
-      - [ ] AnalyzePrediction(id) ---> GetFutureFiveDayPerformance stored procedure; Determine if prediction was correct/incorrect and updated prediction entry.
-      - [x] CreatePrediction()
-      - [x] GetPredictions()
-      - [x] GetPredictionById(id)
-      - [x] UpdatePrediction()
-      - [x] DeletePrediction()
+   - [ ] DatasetService(IDatasetRepository)
+      - [ ] IEnumerable<INetworkTrainingInput> GetTrainingDataset(networkConfigurationId, startDate, endDate)
+      - [ ] IEnumerable<INetworkInput> GetNetworkInputs(networkConfigurationId, date)
