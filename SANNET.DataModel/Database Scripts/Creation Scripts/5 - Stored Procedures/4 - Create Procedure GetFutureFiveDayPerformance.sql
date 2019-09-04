@@ -16,26 +16,20 @@ GO
 -- =============================================
 -- Author:		Steve Whitmire Jr.
 -- Create date: 08-28-2019
--- Description:	Returns the five day performance for a given company for the designated @date. 
+-- Description:	Returns the five day performance for a given company from the @startDate to the @endDate. 
 --				The returned items will indicate whether the stock rose to the @riseMultiplierTrigger  
---				before falling to the @fallMultiplierTrigger and vice versa.
+--				before falling to the @fallMultiplierTrigger and vice versa for each day.
 -- =============================================
 CREATE PROCEDURE [dbo].[GetFutureFiveDayPerformance]
 	@companyId int,
-	@date date,
+	@startDate date,
+	@endDate date,
 	@riseMultiplierTrigger decimal(7, 3) = 1.01,
-	@fallMultiplierTrigger decimal(7, 3) = 1.01
+	@fallMultiplierTrigger decimal(7, 3) = .99
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from interfering with SELECT statements.
 	SET NOCOUNT ON;
-
-	-- End date is 5 quote-dates after the start date.
-	DECLARE @endDate DATE = 
-		(SELECT TOP 1 LEAD([Date], 5) OVER (ORDER BY [Date]) 
-		 FROM StockMarketData.dbo.Quotes 
-		 WHERE [CompanyId] = @companyId AND [Date] >= @date
-		 ORDER BY [Date])
 
 	/*********************************************************************************************
 		Table to hold the performance outputs starting from the @startDate 
@@ -45,6 +39,7 @@ BEGIN
 		[QuoteId] INT,
 		[CompanyId] INT,
 		[Date] DATE,
+		[Close] DECIMAL(12, 2),
 		[FiveDayOutcomeType] INT
 	)
 
@@ -52,6 +47,7 @@ BEGIN
 	SELECT [Id] as [QuoteId],
 		   [CompanyId],
 		   [Date],
+		   [Close],
 		   CASE WHEN LEAD([Close], 1) OVER (ORDER BY [Date]) > [Close] * @riseMultiplierTrigger THEN 1
 				ELSE CASE WHEN LEAD([Close], 1) OVER (ORDER BY [Date]) < [Close] * @fallMultiplierTrigger THEN -1
 					 ELSE CASE WHEN LEAD([Close], 2) OVER (ORDER BY [Date]) > [Close] * @riseMultiplierTrigger THEN 1
@@ -65,7 +61,7 @@ BEGIN
 															 ELSE 0
 														END END END END END END END END END END as [FiveDayOutcomeType]
 	FROM StockMarketData.dbo.Quotes
-	WHERE [CompanyId] = @companyId AND [Date] >= @date
+	WHERE [CompanyId] = @companyId AND [Date] >= @startDate
 	ORDER BY [Date]
 	
 	/*********************************************************************************************
@@ -74,10 +70,11 @@ BEGIN
 	SELECT [QuoteId],
 		   [CompanyId],
 		   [Date],
+		   --[Close],
 		   CASE WHEN [FiveDayOutcomeType] = 1 THEN 1 ELSE 0 END as [TriggeredRiseFirst],
 		   CASE WHEN [FiveDayOutcomeType] = -1 THEN 1 ELSE 0 END as [TriggeredFallFirst]
 	FROM @fiveDayPerformance
-	WHERE [CompanyId] = @companyId AND [Date] = @date
+	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate
 	ORDER BY [Date]
 END
 GO

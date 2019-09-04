@@ -30,15 +30,19 @@ namespace SANNET.DataModel
         public virtual DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
         public virtual DbSet<Prediction> Predictions { get; set; }
     
-        public virtual ObjectResult<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(Nullable<int> companyId, Nullable<System.DateTime> date, Nullable<decimal> riseMultiplierTrigger, Nullable<decimal> fallMultiplierTrigger)
+        public virtual ObjectResult<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<decimal> riseMultiplierTrigger, Nullable<decimal> fallMultiplierTrigger)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
                 new ObjectParameter("companyId", typeof(int));
     
-            var dateParameter = date.HasValue ?
-                new ObjectParameter("date", date) :
-                new ObjectParameter("date", typeof(System.DateTime));
+            var startDateParameter = startDate.HasValue ?
+                new ObjectParameter("startDate", startDate) :
+                new ObjectParameter("startDate", typeof(System.DateTime));
+    
+            var endDateParameter = endDate.HasValue ?
+                new ObjectParameter("endDate", endDate) :
+                new ObjectParameter("endDate", typeof(System.DateTime));
     
             var riseMultiplierTriggerParameter = riseMultiplierTrigger.HasValue ?
                 new ObjectParameter("riseMultiplierTrigger", riseMultiplierTrigger) :
@@ -48,7 +52,7 @@ namespace SANNET.DataModel
                 new ObjectParameter("fallMultiplierTrigger", fallMultiplierTrigger) :
                 new ObjectParameter("fallMultiplierTrigger", typeof(decimal));
     
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance", companyIdParameter, dateParameter, riseMultiplierTriggerParameter, fallMultiplierTriggerParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance", companyIdParameter, startDateParameter, endDateParameter, riseMultiplierTriggerParameter, fallMultiplierTriggerParameter);
         }
     
         public virtual ObjectResult<GetTrainingDataset1_Result> GetTrainingDataset1(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate)

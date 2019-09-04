@@ -39,5 +39,7 @@ namespace SANNET.DataModel
         public int SMAShortGreaterThanLongForAwhile { get; set; }
         public int SMALongJustCrossedOverShort { get; set; }
         public int SMALongGreaterThanShortForAwhile { get; set; }
+        public int Output_TriggeredRiseFirst { get; set; }
+        public int Output_TriggeredFallFirst { get; set; }
     }
 }

@@ -26,9 +26,9 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	/*****************
+	/***************************
 		RSI tables
-	******************/
+	****************************/
 	DECLARE @rsiValuesShort TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [RSI] DECIMAL(12, 2));
 	INSERT INTO @rsiValuesShort 
 	EXECUTE GetRelativeStrengthIndex @companyId, @startDate, @endDate, 7
@@ -53,9 +53,9 @@ BEGIN
 		   [ConsecutiveDaysValueTwoAboveValueOne] as [ConsecutiveDaysLongAboveShort]
 	FROM GetConsecutiveDayValueCrossovers( @rsiValuesShortCross, @rsiValuesLongCross)
 
-	/*****************
+	/***************************
 		CCI tables
-	******************/
+	****************************/
 	DECLARE @cciValuesShort TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [CCI] DECIMAL(12, 2));
 	INSERT INTO @cciValuesShort 
 	EXECUTE GetCommodityChannelIndex @companyId, @startDate, @endDate, 7
@@ -64,9 +64,9 @@ BEGIN
 	INSERT INTO @cciValuesLong 
 	EXECUTE GetCommodityChannelIndex @companyId, @startDate, @endDate, 14
 
-	/*****************
+	/***************************
 		SMA tables
-	******************/
+	****************************/
 	DECLARE @smaValuesShort TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [Close] DECIMAL(12, 2), [SMA] DECIMAL(12, 2));
 	INSERT INTO @smaValuesShort 
 	EXECUTE GetSimpleMovingAverage @companyId, @startDate, @endDate, 7
@@ -92,6 +92,13 @@ BEGIN
 	FROM GetConsecutiveDayValueCrossovers( @smaValuesShortCross, @smaValuesLongCross)
 
 	/***************************
+		Future Five Day Performance
+	****************************/
+	DECLARE @futureFiveDayPerformance TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [TriggeredRiseFirst] BIT, [TriggeredFallFirst] BIT);
+	INSERT INTO @futureFiveDayPerformance 
+	EXECUTE GetFutureFiveDayPerformance @companyId, @startDate, @endDate, 1.04, .98
+
+	/***************************
 		All combined indicators
 	****************************/
 	DECLARE @combinedIndicatorValues TABLE(
@@ -111,7 +118,9 @@ BEGIN
 		[SMAShort] DECIMAL(12, 2), 
 		[SMALong] DECIMAL(12, 2), 
 		[SMAConsecutiveDaysShortAboveLong] INT,
-		[SMAConsecutiveDaysLongAboveShort] INT);
+		[SMAConsecutiveDaysLongAboveShort] INT,
+		[Output_TriggeredRiseFirst] BIT,
+		[Output_TriggeredFallFirst] BIT);
 
 	INSERT INTO @combinedIndicatorValues
 	SELECT rsiShort.[Date],
@@ -127,7 +136,9 @@ BEGIN
 		   smaShort.SMA as [SMAShort],
 		   smaLong.SMA as [SMALong],
 		   smaCross.ConsecutiveDaysShortAboveLong as [SMAConsecutiveDaysShortAboveLong],
-		   smaCross.ConsecutiveDaysLongAboveShort as [SMAConsecutiveDaysLongAboveShort]
+		   smaCross.ConsecutiveDaysLongAboveShort as [SMAConsecutiveDaysLongAboveShort],
+		   fiveDayPerformance.TriggeredRiseFirst as [Output_TriggeredRiseFirst],
+		   fiveDayPerformance.TriggeredFallFirst as [Output_TriggeredFallFirst]
 	FROM @rsiValuesShort rsiShort 
 			INNER JOIN @rsiValuesLong rsiLong ON rsiShort.[QuoteId] = rsiLong.[QuoteId]
 			INNER JOIN @rsiValuesCross rsiCross ON rsiShort.[QuoteId] = rsiCross.[QuoteId]
@@ -137,6 +148,7 @@ BEGIN
 			INNER JOIN @smaValuesLong smaLong ON rsiShort.[QuoteId] = smaLong.[QuoteId]
 			INNER JOIN @smaValuesCross smaCross ON rsiShort.[QuoteId] = smaCross.[QuoteId]
 			INNER JOIN StockMarketData.dbo.Quotes quotes ON rsiShort.QuoteId = quotes.Id
+			INNER JOIN @futureFiveDayPerformance fiveDayPerformance ON rsiShort.QuoteId = fiveDayPerformance.QuoteId
 	WHERE rsiShort.CompanyId = @companyId AND rsiShort.Date >= @startDate AND rsiShort.Date <= @endDate
 
 	/***************************
@@ -183,7 +195,11 @@ BEGIN
 		   CASE WHEN [SMAConsecutiveDaysShortAboveLong] <= 3 AND [SMAConsecutiveDaysShortAboveLong] >= 1 THEN 1 ELSE 0 END [SMAShortJustCrossedOverLong],
 		   CASE WHEN [SMAConsecutiveDaysShortAboveLong] > 3 THEN 1 ELSE 0 END [SMAShortGreaterThanLongForAwhile],
 		   CASE WHEN [SMAConsecutiveDaysLongAboveShort] <= 3 AND [SMAConsecutiveDaysLongAboveShort] >= 1 THEN 1 ELSE 0 END [SMALongJustCrossedOverShort],
-		   CASE WHEN [SMAConsecutiveDaysLongAboveShort] > 3 THEN 1 ELSE 0 END [SMALongGreaterThanShortForAwhile]
+		   CASE WHEN [SMAConsecutiveDaysLongAboveShort] > 3 THEN 1 ELSE 0 END [SMALongGreaterThanShortForAwhile],
+
+		   -- Outputs
+		   CASE WHEN [Output_TriggeredRiseFirst] = 1 THEN 1 ELSE 0 END [Output_TriggeredRiseFirst],
+		   CASE WHEN [Output_TriggeredFallFirst] = 1 THEN 1 ELSE 0 END [Output_TriggeredFallFirst]
 	FROM @combinedIndicatorValues
 END
 GO

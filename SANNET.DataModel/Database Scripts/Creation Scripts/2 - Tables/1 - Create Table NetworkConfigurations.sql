@@ -6,8 +6,7 @@ BEGIN
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[NumHiddenLayers] [int] NOT NULL,
 	[NumHiddenLayerNeurons] [int] NOT NULL,
-	[InputNeuronDetails] [varchar](1000) NOT NULL,
-	[OutputNeuronDetails] [varchar](1000) NOT NULL,
+	[NumTrainingMonths] [int] NOT NULL,
 	 CONSTRAINT [PK_NetworkConfigurations] PRIMARY KEY CLUSTERED 
 	(
 		[Id] ASC

@@ -49,6 +49,9 @@ namespace SANNET.Business.Repositories
         /// <returns>Returns the computed training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
         public IEnumerable<GetTrainingDataset1_Result> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate)
         {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
+
             return _context.ExecuteStoredProcedure<GetTrainingDataset1_Result>("GetTrainingDataset1 @companyId, @startDate, @endDate",
                                             new SqlParameter("companyId", companyId),
                                             new SqlParameter("startDate", startDate),
@@ -65,6 +68,9 @@ namespace SANNET.Business.Repositories
         /// <returns></returns>
         public IEnumerable<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(int companyId, DateTime date, double riseMultiplierTrigger, double fallMultiplierTrigger)
         {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
+
             return _context.ExecuteStoredProcedure<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance @companyId, @date, @riseMultiplierTrigger, @fallMultiplierTrigger",
                                             new SqlParameter("companyId", companyId),
                                             new SqlParameter("date", date),

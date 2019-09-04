@@ -5,7 +5,7 @@
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
       <Diagram DiagramId="eb74a6964250498aa7a9a0fa6b774faf" Name="Diagram1">
-        <EntityTypeShape EntityType="SANNET.DataModel.NetworkConfiguration" Width="1.5" PointX="0.75" PointY="1.375" />
+        <EntityTypeShape EntityType="SANNET.DataModel.NetworkConfiguration" Width="1.5" PointX="0.75" PointY="1.5" />
         <EntityTypeShape EntityType="SANNET.DataModel.Prediction" Width="1.5" PointX="3" PointY="1" />
         <AssociationConnector Association="SANNET.DataModel.FK_Predictions_NetworkConfigurations" />
       </Diagram>
