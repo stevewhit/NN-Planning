@@ -10,8 +10,7 @@ BEGIN
 	[TrainingStartDate] [date] NOT NULL,
 	[TrainingEndDate] [date] NOT NULL,
 	[PredictedOutcome] [nvarchar](100) NOT NULL,
-	[PredictionConfidence] [decimal](5, 2) NOT NULL,
-	[Outcome] [nvarchar](100) NULL,
+	[ActualOutcome] [nvarchar](100) NULL,
 	 CONSTRAINT [PK_Predictions] PRIMARY KEY CLUSTERED 
 	(
 		[Id] ASC

@@ -25,8 +25,7 @@
           <Property Name="TrainingStartDate" Type="date" Nullable="false" />
           <Property Name="TrainingEndDate" Type="date" Nullable="false" />
           <Property Name="PredictedOutcome" Type="nvarchar" MaxLength="100" Nullable="false" />
-          <Property Name="PredictionConfidence" Type="decimal" Precision="5" Scale="2" Nullable="false" />
-          <Property Name="Outcome" Type="nvarchar" MaxLength="100" />
+          <Property Name="ActualOutcome" Type="nvarchar" MaxLength="100" />
         </EntityType>
         <Association Name="FK_Predictions_NetworkConfigurations">
           <End Role="NetworkConfigurations" Type="Self.NetworkConfigurations" Multiplicity="1" />
@@ -142,8 +141,7 @@
           <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
           <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
           <Property Name="PredictedOutcome" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
-          <Property Name="PredictionConfidence" Type="Decimal" Nullable="false" Precision="5" Scale="2" />
-          <Property Name="Outcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="ActualOutcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
           <NavigationProperty Name="NetworkConfiguration" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="Prediction" ToRole="NetworkConfiguration" />
         </EntityType>
         <Association Name="FK_Predictions_NetworkConfigurations">
@@ -222,8 +220,7 @@
           <EntitySetMapping Name="Predictions">
             <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
               <MappingFragment StoreEntitySet="Predictions">
-                <ScalarProperty Name="Outcome" ColumnName="Outcome" />
-                <ScalarProperty Name="PredictionConfidence" ColumnName="PredictionConfidence" />
+                <ScalarProperty Name="ActualOutcome" ColumnName="ActualOutcome" />
                 <ScalarProperty Name="PredictedOutcome" ColumnName="PredictedOutcome" />
                 <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
                 <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />

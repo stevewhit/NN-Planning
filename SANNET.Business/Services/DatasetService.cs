@@ -10,6 +10,7 @@ namespace SANNET.Business.Services
     {
         IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int networkConfigurationId, int companyId, DateTime startDate, DateTime endDate);
         IEnumerable<INetworkInput> GetNetworkInputs(int networkConfigurationId, int companyId, DateTime date);
+        string GetFiveDayPerformanceDescription(int companyId, DateTime date);
     }
 
     public class DatasetService : IDatasetService
@@ -22,6 +23,16 @@ namespace SANNET.Business.Services
             _repository = repository;
         }
 
+        #region IDatasetService
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="networkConfigurationId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <returns></returns>
         public IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int networkConfigurationId, int companyId, DateTime startDate, DateTime endDate)
         {
             if (_isDisposed)
@@ -31,6 +42,13 @@ namespace SANNET.Business.Services
                     throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="networkConfigurationId"></param>
+        /// <param name="companyId"></param>
+        /// <param name="date"></param>
+        /// <returns></returns>
         public IEnumerable<INetworkInput> GetNetworkInputs(int networkConfigurationId, int companyId, DateTime date)
         {
             if (_isDisposed)
@@ -40,8 +58,15 @@ namespace SANNET.Business.Services
                     throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
         }
 
-        #region Dataset Method 1
+        #region (Inner) Dataset Method 1
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="companyId"></param>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <returns></returns>
         private IEnumerable<INetworkTrainingIteration> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate)
         {
             var dataset = _repository.GetTrainingDataset1(companyId, startDate, endDate);
@@ -93,8 +118,8 @@ namespace SANNET.Business.Services
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMALongGreaterThanShortForAwhile });
 
                 // Outputs
-                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredRiseFirst});
-                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredFallFirst});
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredRiseFirst, Description = "Triggered Rise First"});
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredFallFirst, Description = "Triggered Fall First"});
 
                 trainingIterations.Add(trainingIteration);
             }
@@ -102,6 +127,12 @@ namespace SANNET.Business.Services
             return trainingIterations;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="companyId"></param>
+        /// <param name="date"></param>
+        /// <returns></returns>
         private IEnumerable<INetworkInput> GetNetworkInputs1(int companyId, DateTime date)
         {
             var dataset = _repository.GetTrainingDataset1(companyId, date, date);
@@ -155,6 +186,25 @@ namespace SANNET.Business.Services
 
             return inputs;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="companyId"></param>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        public string GetFiveDayPerformanceDescription(int companyId, DateTime date)
+        {
+            var dataset = _repository.GetTrainingDataset1(companyId, date, date);
+
+            if (dataset.Count() != 1)
+                throw new InvalidOperationException("Dataset should only contain 1 entry.");
+
+            var entry = dataset.First();
+            return $"[({entry.Output_TriggeredRiseFirst * 100.0}%) Triggered Rise First], [({entry.Output_TriggeredFallFirst * 100.0}%) Triggered Fall First]";
+        }
+
+        #endregion
 
         #endregion
         #region IDisposable

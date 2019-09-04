@@ -21,8 +21,7 @@ namespace SANNET.DataModel
         public System.DateTime TrainingStartDate { get; set; }
         public System.DateTime TrainingEndDate { get; set; }
         public string PredictedOutcome { get; set; }
-        public decimal PredictionConfidence { get; set; }
-        public string Outcome { get; set; }
+        public string ActualOutcome { get; set; }
     
         public virtual NetworkConfiguration NetworkConfiguration { get; set; }
     }
