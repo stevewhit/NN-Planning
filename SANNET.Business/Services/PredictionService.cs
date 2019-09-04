@@ -1,7 +1,9 @@
 ﻿using Framework.Generic.EntityFramework;
+using NeuralNetwork.Generic.Datasets;
 using SANNET.DataModel;
 using StockMarket.DataModel;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 
@@ -50,13 +52,14 @@ namespace SANNET.Business.Services
     public class PredictionService<P, Q, C, N> : IPredictionService<P> where P : Prediction where Q : Quote where C : Company where N : NetworkConfiguration
     {
         private bool _isDisposed = false;
+
         private readonly IEfRepository<P> _predictionRepository;
         private readonly IQuoteService<Q> _quoteService;
         private readonly ICompanyService<C> _companyService;
-        private readonly IDatasetService<N> _datasetService;
+        private readonly IDatasetService _datasetService;
         private readonly INetworkConfigurationService<N> _networkConfigurationService;
         
-        public PredictionService(IEfRepository<P> predictionRepository, IQuoteService<Q> quoteService, ICompanyService<C> companyService, IDatasetService<N> datasetService, INetworkConfigurationService<N> networkConfigurationService)
+        public PredictionService(IEfRepository<P> predictionRepository, IQuoteService<Q> quoteService, ICompanyService<C> companyService, IDatasetService datasetService, INetworkConfigurationService<N> networkConfigurationService)
         {
             _predictionRepository = predictionRepository ?? throw new ArgumentNullException("predictionRepository");
             _quoteService = quoteService ?? throw new ArgumentNullException("quoteService");
@@ -79,12 +82,12 @@ namespace SANNET.Business.Services
             {
                 foreach (var config in networkConfigs)
                 {
-                    GeneratePredictions(company.Id, config.Id);
+                    GenerateCompanyPredictions(company.Id, config.Id);
                 }
             }
         }
 
-        public void GeneratePredictions(int companyId, int networkConfigId)
+        public void GenerateCompanyPredictions(int companyId, int networkConfigId)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
@@ -94,28 +97,43 @@ namespace SANNET.Business.Services
 
             foreach (var quote in quotesWithoutPredictions)
             {
-                GeneratePrediction(quote.Id, networkConfigId);
+                GenerateQuotePrediction(quote.Id, networkConfigId);
             }
         }
         
-        public void GeneratePrediction(int quoteId, int networkConfigId)
+        public void GenerateQuotePrediction(int quoteId, int networkConfigId)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
 
             var quote = _quoteService.FindQuote(quoteId) ?? throw new InvalidOperationException($"Invalid quoteId supplied: {quoteId}.");
 
-
-
-            //Gets the NetworkTrainingDatasetMethod, trains the network, Gets the NetworkTestingDatasetMethod with matching id and applys as input to NN. Analyzes results and generates entry in predictions table with confidence of prediction. Returns prediction??
-            var trainingDataset = _datasetService.GetTrainingDataset(??? other args hereeee ??? networkConfigId);
             var networkConfig = _networkConfigurationService.FindConfiguration(networkConfigId);
+            var trainingDatasetEntries = _datasetService.GetTrainingDataset(networkConfigId, quote.CompanyId, quote.Date.AddDays(-1).AddMonths(-1 * networkConfig.NumTrainingMonths), quote.Date.AddDays(-1));
+            var predictionDayInputs = _datasetService.GetNetworkInputs(networkConfigId, quote.CompanyId, quote.Date);
 
-            GeneratePrediction(null, networkConfig);
+            GeneratePrediction(trainingDatasetEntries, predictionDayInputs);
         }
 
+        private void GeneratePrediction(IEnumerable<INetworkTrainingIteration> trainingDatasetEntries, IEnumerable<INetworkInput> predictionDayInputs)
+        {
+            if (trainingDatasetEntries == null)
+                throw new ArgumentNullException("trainingDatasetEntries");
+
+            // Setup NN
 
 
+            // Train NN with dataset
+
+
+            // Apply predictionDayInputs to NN
+
+
+            // Read/analyze NN output to determine 
+
+
+            // Generate entry in predictions table with confidence in the prediction.
+        }
 
 
 
