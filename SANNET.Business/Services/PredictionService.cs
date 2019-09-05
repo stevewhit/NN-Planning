@@ -50,14 +50,9 @@ namespace SANNET.Business.Services
         /// </summary>
         /// <param name="prediction">The prediction that is to be deleted.</param>
         void Delete(P prediction);
-        
-        void GenerateAllPredictions();
-        void GenerateCompanyPredictions(int companyId, int networkConfigId);
-        void GenerateQuotePrediction(int quoteId, int networkConfigId);
-        void AnalyzePredictions();
     }
 
-    public class PredictionService<P, Q, C, N> : IPredictionService<P> where P : Prediction where Q : Quote where C : Company where N : NetworkConfiguration
+    public class PredictionService<P, Q, C, N> : IPredictionService<P> where P : Prediction, new() where Q : Quote where C : Company where N : NetworkConfiguration
     {
         private bool _isDisposed = false;
 
@@ -163,246 +158,186 @@ namespace SANNET.Business.Services
         }
 
         /// <summary>
-        /// Generates quote predictions for every company's network configuration.
+        /// Generates quote predictions for every quote for each network configuration.
         /// </summary>
         public void GenerateAllPredictions()
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
 
-            var companies = _companyService.GetCompanies().ToList();
+            var quotes = _quoteService.GetQuotes().ToList();
+            var predictions = GetPredictions().ToList();
             var networkConfigs = _networkConfigurationService.GetConfigurations().ToList();
 
-            foreach (var company in companies.Where(c => c.Id == 1))
+            // Verify quote has prediction for EACH network configuration.
+            foreach (var quote in quotes)
             {
-                foreach (var config in networkConfigs.Where(c => c.Id == 1))
+                foreach (var config in networkConfigs)
                 {
-                    GenerateCompanyPredictions(company.Id, config.Id);
+                    // If the prediction for this quote and network config doesn't exist, create one.
+                    if (!predictions.Any(p => p.QuoteId == quote.Id && p.ConfigurationId == config.Id))
+                    {
+                        GenerateQuotePrediction(quote, config);
+                    }
                 }
             }
         }
-        
+
         /// <summary>
-        /// Generates quote predictions for a company using the specified network configuration.
+        /// Generates and returns a prediction for a specific <paramref name="quote"/> using the specified <paramref name="networkConfig"/>.
         /// </summary>
-        /// <param name="companyId"></param>
-        /// <param name="networkConfigId"></param>
-        public void GenerateCompanyPredictions(int companyId, int networkConfigId)
+        /// <param name="quote">The quote to generate predictions for.</param>
+        /// <param name="networkConfig">The network configuration used to generate the prediction.</param>
+        /// <returns>Returns the prediction for the specified <paramref name="quote"/> using the specified <paramref name="networkConfig"/>.</returns>
+        public P GenerateQuotePrediction(Q quote, N networkConfig)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
 
-            var companyPredictions = GetPredictions().Where(p => p.CompanyId == companyId);
-            var companyQuotes = _quoteService.GetQuotes().Where(q => q.CompanyId == companyId).ToList();
-            var quotesWithoutPredictions = companyQuotes.Where(q => !companyPredictions.Any(p => p.QuoteId == q.Id && p.ConfigurationId == networkConfigId)).ToList();
+            if (quote == null)
+                throw new ArgumentNullException("quote");
 
-            foreach (var quote in quotesWithoutPredictions)
+            if (networkConfig == null)
+                throw new ArgumentNullException("networkConfig");
+
+            // Create and train a network
+            var trainedNetwork = CreateTrainedNetwork(networkConfig, quote);
+
+            // Apply test inputs to network to retrieve outputs.
+            var outputs = ApplyConfigInputsToNetwork(trainedNetwork, networkConfig.Id, quote.CompanyId, quote.Date);
+
+            return new P()
             {
-                try
-                {
-                    GenerateQuotePrediction(quote.Id, networkConfigId);
-                }
-                catch(Exception e)
-                {
-                    var blah = e;
-                    // This is not how it should be handled. This is temporary!
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Generates quote predictions for a specific quote(date) using the specified network configuration.
-        /// </summary>
-        /// <param name="quoteId"></param>
-        /// <param name="networkConfigId"></param>
-        public void GenerateQuotePrediction(int quoteId, int networkConfigId)
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
-
-            var quote = _quoteService.FindQuote(quoteId) ?? throw new InvalidOperationException($"Cannot find quote with id: {quoteId}.");
-            var networkConfig = _networkConfigurationService.FindConfiguration(networkConfigId) ?? throw new InvalidOperationException($"Cannot find network configuration with id: {networkConfigId}.");
-
-            var trainingStartDate = quote.Date.AddDays(-1).AddMonths(-1 * networkConfig.NumTrainingMonths);
-            var trainingEndDate = quote.Date.AddDays(-1);
-
-            // Generate datasets
-            var trainingDatasetEntries = _datasetService.GetTrainingDataset(networkConfigId, quote.CompanyId, trainingStartDate, trainingEndDate);
-            var predictionDayInputs = _datasetService.GetNetworkInputs(networkConfigId, quote.CompanyId, quote.Date);
-
-            // Create and train a neural network using the network config and dataset entries.
-            var trainedNetwork = CreateTrainedNetwork(networkConfig, trainingDatasetEntries);
-
-            var networkInputLayer = trainedNetwork.Layers.OfType<IInputLayer>().First();
-            SyncInputNeuronsAndNeuronInputs(predictionDayInputs, networkInputLayer);
-
-            // Apply inputs to network.
-            var outputs = trainedNetwork.ApplyInputs(predictionDayInputs);
-
-            // Generate and add prediction with confidence in the prediction.
-            Add((P)new Prediction()
-            {
-                ConfigurationId = networkConfigId,
+                ConfigurationId = networkConfig.Id,
                 CompanyId = quote.CompanyId,
-                QuoteId = quoteId,
-                TrainingStartDate = trainingStartDate,
-                TrainingEndDate = trainingEndDate,
+                QuoteId = quote.Id,
+                TrainingStartDate = GetTrainingStartDateForQuote(quote, networkConfig),
+                TrainingEndDate = GetTrainingEndDateForQuote(quote),
                 PredictedOutcome = string.Join(",", outputs.Select(o => $"[({o.ActivationLevel * 100.0}%) {o.Description}]"))
-            });
+            };
         }
 
-
-
-
-
-        // Things to fix:
-        // 1. Need to train NN for each prediction much longer than just the 2 months. re-iterate over the dataset multiple times until it gets more accurate??
-        // 2. Add async logic into this using BELOW examples.
-        // 3. Add try catch blocks where necessary to make sure this doesn't blow up if one prediction goes bad.
-        // 4. Remember your .ToList() returns so that we're not passing IEnumerables around and run into context transaction exceptions..
-        
-
-
-
-
-
-
-
-
-
-        ///// <summary>
-        ///// Downloads and stores quotes for all active companies up to max range of quotes.
-        ///// </summary>
-        //public async Task UpdateAllCompaniesWithLatestQuotesAsync()
-        //{
-        //    if (_isDisposed)
-        //        throw new ObjectDisposedException("MarketService", "The service has been disposed.");
-
-        //    // Asyncronously download stock data for each company.
-        //    var runningTasks = _companyService.GetCompanies().Where(c => c.RetrieveQuotesFlag).ToList().Select(c => GetLatestQuotesForCompanyAsync(c)).ToList();
-        //    var taskExceptions = new List<Exception>();
-
-        //    while (runningTasks.Any())
-        //    {
-        //        try
-        //        {
-        //            var completedTask = await Task.WhenAny(runningTasks);
-        //            runningTasks.Remove(completedTask);
-
-        //            // Process any completed task by adding the new quote data
-        //            _quoteService.AddRange(await completedTask);
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            taskExceptions.Add(e);
-        //        }
-        //    }
-
-        //    if (taskExceptions.Any())
-        //        throw new AggregateException(taskExceptions);
-        //}
-
-        ///// <summary>
-        ///// Asycronously downloads and returns quotes for a given company, up to a max range. 
-        ///// </summary>
-        ///// <param name="company">The company to store the quotes for.</param>
-        ///// <returns>Returns the downloaded quotes for the given company.</returns>
-        //private async Task<IEnumerable<Q>> GetLatestQuotesForCompanyAsync(C company)
-        //{
-        //    var companyQuotes = company.Quotes.ToList();
-
-        //    // If quotes are stored for this company, return the last date a quote was stored.
-        //    var lastStoredQuoteDate = companyQuotes.Any() ? companyQuotes.Max(q => q.Date).Date : DateTime.Now.AddMonths(-1 * MAX_MONTHS_TO_DOWNLOAD).AddDays(-1).Date;
-        //    var todaysDate = DateTime.Now.Date;
-
-        //    return await Task.Run(() =>
-        //    {
-        //        // Download quotes in chuncks based off the date difference between the last stored quote date and today's date.
-        //        var downloadedQuotes = lastStoredQuoteDate.AddDays(1) >= todaysDate ? new[] { _downloader.DownloadPreviousDayQuote(company.Symbol) } :
-        //                               lastStoredQuoteDate.AddDays(5) >= todaysDate ? _downloader.DownloadQuotesFiveDays(company.Symbol) :
-        //                               lastStoredQuoteDate.AddMonths(1) >= todaysDate ? _downloader.DownloadQuotesOneMonth(company.Symbol) :
-        //                               lastStoredQuoteDate.AddMonths(3) >= todaysDate ? _downloader.DownloadQuotesThreeMonths(company.Symbol) :
-        //                               lastStoredQuoteDate.AddMonths(5) >= todaysDate ? _downloader.DownloadQuotesFiveMonths(company.Symbol) :
-        //                               lastStoredQuoteDate.AddYears(1) >= todaysDate ? _downloader.DownloadQuotesOneYear(company.Symbol) :
-        //                               lastStoredQuoteDate.AddYears(2) >= todaysDate ? _downloader.DownloadQuotesTwoYears(company.Symbol) :
-        //                               _downloader.DownloadQuotesTwoYears(company.Symbol);
-
-        //        // Remove any dates that are already stored for the company.
-        //        var quotes = downloadedQuotes.Where(dq => !companyQuotes.Any(cq => cq.Date == dq.Date)).OrderBy(dq => dq.Date).ToList();
-
-        //        // Store company for each quote.
-        //        return quotes.ForEach<Q>(q => { q.Company = company; q.CompanyId = company.Id; });
-        //    });
-        //}
-
-
-
-
-
-
-
-
+        /// <summary>
+        /// Returns the final training date in for the <paramref name="quote"/>.
+        /// </summary>
+        /// <param name="quote">The quote that the training is applied to.</param>
+        /// <returns>Returns the final date that training should end on.</returns>
+        private DateTime GetTrainingEndDateForQuote(Q quote)
+        {
+            return quote.Date.AddDays(-1);
+        }
 
         /// <summary>
-        /// Dynamically creates a neural network using details from the networkConfiguration and the trainingDatasetEntries. After creation, the network is the
-        /// trained using the trainingDatasetEntries and returned;
+        /// Returns the first training date for the <paramref name="quote"/> based on the <paramref name="networkConfig"/>.
+        /// </summary>
+        /// <param name="quote">The quote that the training is applied to.</param>
+        /// <param name="networkConfig">The network configuration that indicates how long to train for.</param>
+        /// <returns>Returns the start date that training should begin on.</returns>
+        private DateTime GetTrainingStartDateForQuote(Q quote, N networkConfig)
+        {
+            return quote.Date.AddDays(-1).AddMonths(-1 * networkConfig.NumTrainingMonths);
+        }
+
+        /// <summary>
+        /// Creates and returns a trained neural network using the specified <paramref name="networkConfiguration"/> over the identified training dates.
+        /// </summary>
+        /// <param name="networkConfiguration">The network configuration for the neural network.</param>
+        /// <param name="companyId">The id of the company </param>
+        /// <param name="trainingStartDate"></param>
+        /// <param name="trainingEndDate"></param>
+        /// <returns>Returns a trained neural network using the specified <paramref name="networkConfiguration"/> over the identified training dates</returns>
+        private IDFFNeuralNetwork CreateTrainedNetwork(N networkConfiguration, Q quote)// int companyId, DateTime trainingStartDate, DateTime trainingEndDate)
+        {
+            var trainingStartDate = GetTrainingStartDateForQuote(quote, networkConfiguration);
+            var trainingEndDate = GetTrainingEndDateForQuote(quote);
+            var trainingDatasetEntries = _datasetService.GetTrainingDataset(networkConfiguration.Id, quote.CompanyId, trainingStartDate, trainingEndDate);
+            
+            // Create a neural network using the network config and dataset entries.
+            var network = CreateNetwork(networkConfiguration, trainingDatasetEntries?.First());
+
+            // Sync dataset NeuronIds with the network NeuronIds.
+            MapTrainingEntriesToNeurons(network, trainingDatasetEntries);
+
+            return TrainNetwork(network, trainingDatasetEntries);
+        }
+
+        /// <summary>
+        /// Creates and returns a neural network using configuration settings in the <paramref name="networkConfiguration"/> and the <paramref name="trainingEntry"/>. 
         /// </summary>
         /// <param name="networkConfiguration"></param>
         /// <param name="trainingDatasetEntries"></param>
-        /// <returns></returns>
-        private IDFFNeuralNetwork CreateTrainedNetwork(N networkConfiguration, IEnumerable<INetworkTrainingIteration> trainingDatasetEntries)
+        /// <returns>Returns a neural network using configuration settings in the <paramref name="networkConfiguration"/> and the <paramref name="trainingEntry"/>.</returns>
+        private IDFFNeuralNetwork CreateNetwork(N networkConfiguration, INetworkTrainingIteration trainingEntry)
         {
-            if (networkConfiguration == null)
-                throw new ArgumentNullException("networkConfiguration");
+            if (trainingEntry == null || trainingEntry.Inputs == null || trainingEntry.Outputs == null)
+                throw new ArgumentNullException("trainingEntry");
 
-            if (trainingDatasetEntries == null || !trainingDatasetEntries.Any())
-                throw new ArgumentNullException("trainingDatasetEntries");
-
-            var numInputs = trainingDatasetEntries.First().Inputs?.Count() ?? throw new ArgumentException("TrainingDatasetEntries contains entry with null inputs.");
-            var numOutputs = trainingDatasetEntries.First().Outputs?.Count() ?? throw new ArgumentException("TrainingDatasetEntries contains entry with null outputs.");
+            var numInputs = trainingEntry.Inputs.Count();
+            var numOutputs = trainingEntry.Outputs.Count();
             var numHiddenLayers = networkConfiguration.NumHiddenLayers;
             var numHiddenLayerNeurons = networkConfiguration.NumHiddenLayerNeurons;
 
-            // Setup network.
-            IDFFNeuralNetwork network = new DFFNeuralNetwork(numInputs, numHiddenLayers, numHiddenLayerNeurons, numOutputs);
+            // Setup and randomize network.
+            var network = new DFFNeuralNetwork(numInputs, numHiddenLayers, numHiddenLayerNeurons, numOutputs);
             network.RandomizeNetwork();
-
-            var inputLayer = network.Layers.OfType<IInputLayer>().First();
-            var outputLayer = network.Layers.OfType<IOutputLayer>().First();
-
-            // For each of the input & output entries in the training dataset, 
-            // update the neuronId to correlate with what is initialized in the neural network.
-            // Otherwise, the dataset will be considered invalid when training begins.
-            foreach (var trainingEntry in trainingDatasetEntries)
-            {
-                SyncInputNeuronsAndNeuronInputs(trainingEntry.Inputs, inputLayer);
-                SyncOutputNeuronsAndNeuronOutputs(trainingEntry.Outputs, outputLayer);
-            }
-
-            // Train network.
-            network.Train(trainingDatasetEntries);
 
             return network;
         }
 
         /// <summary>
-        /// Updates each NeuronId of the network inputs to coordinate with the neuronIds of the input layer neurons.
+        /// Trains the <paramref name="network"/> using <paramref name="trainingDatasetEntries"/> and return the average training cost of the final iteration.
         /// </summary>
-        /// <param name="inputs"></param>
-        /// <param name="inputLayer"></param>
-        private void SyncInputNeuronsAndNeuronInputs(IEnumerable<INetworkInput> inputs, IInputLayer inputLayer)
+        /// <param name="network">The neural network that is to be trained.</param>
+        /// <param name="trainingDatasetEntries">The training iterations to train the network with.</param>
+        /// <returns>Returns the average training cost of the final iteration.</returns>
+        private double TrainNetwork(IDFFNeuralNetwork network, IEnumerable<INetworkTrainingIteration> trainingDatasetEntries)
         {
+            return network.Train(trainingDatasetEntries).Average(i => i.TrainingCost);
+        }
+
+        /// <summary>
+        /// Maps each of the training entry inputs and outputs to their respective input and output neurons in the network.
+        /// </summary>
+        /// <param name="network">The network containing the input and output neurons to map the entries to.</param>
+        /// <param name="trainingDatasetEntries">The training entries with inputs and outputs that will be mapped to network neurons.</param>
+        private void MapTrainingEntriesToNeurons(INeuralNetwork network, IEnumerable<INetworkTrainingIteration> trainingDatasetEntries)
+        {
+            if (network == null)
+                throw new ArgumentNullException("network");
+
+            if (trainingDatasetEntries == null)
+                throw new ArgumentNullException("trainingDatasetEntries");
+
+            var inputNeurons = network.Layers?.OfType<IInputLayer>().FirstOrDefault()?.Neurons?.OfType<IInputNeuron>();
+            var outputNeurons = network.Layers?.OfType<IOutputLayer>().FirstOrDefault()?.Neurons?.OfType<IOutputNeuron>();
+
+            // Link the network inputs/outputs to the input/output neurons of the network.
+            foreach (var trainingEntry in trainingDatasetEntries)
+            {
+                MapInputsToInputNeurons(inputNeurons, trainingEntry.Inputs);
+                MapOutputsToOutputNeurons(outputNeurons, trainingEntry.Outputs);
+            }
+        }
+
+        /// <summary>
+        /// Maps each of the <paramref name="inputs"/> to the respective input neuron in <paramref name="inputNeurons"/>.
+        /// </summary>
+        /// <param name="inputNeurons">The collection of input neurons that the inputs should be mapped to.</param>
+        /// <param name="inputs">The network inputs that will be mapped to input neurons.</param>
+        private void MapInputsToInputNeurons(IEnumerable<IInputNeuron> inputNeurons, IEnumerable<INetworkInput> inputs)
+        {
+            if (inputNeurons == null)
+                throw new ArgumentNullException("inputNeurons");
+
             if (inputs == null)
                 throw new ArgumentNullException("inputs");
 
-            if (inputLayer == null)
-                throw new ArgumentNullException("inputLayer");
+            if (inputNeurons?.Count() != inputs.Count())
+            {
+                throw new ArgumentException("The number of network inputs must equal the number of input neurons.");
+            }
 
-            var inputNeurons = inputLayer.Neurons.OfType<IInputNeuron>();
-            if (inputs.Count() != inputNeurons.Count())
-                throw new ArgumentException("The number of network inputs must equal the number of neurons in the input layer.");
-
-            // Update each of the network input neuronIds to coordinate with the input layer neuron neuronIds.
+            // Update each of the network input NeuronIds to coordinate with the input layer neuron neuronIds.
             using (var inputsEnumerator = inputs.GetEnumerator())
             using (var inputNeuronsEnumerator = inputNeurons.GetEnumerator())
             {
@@ -416,37 +351,58 @@ namespace SANNET.Business.Services
                 }
             }
         }
-        
+
         /// <summary>
-        /// Updates each NeuronId of the network outputs to coordinate with the neuronIds of the output layer neurons.
+        /// Maps each of the <paramref name="outputs"/> to the respective output neuron in <paramref name="outputNeurons"/>.
         /// </summary>
-        /// <param name="outputs"></param>
-        /// <param name="outputLayer"></param>
-        private void SyncOutputNeuronsAndNeuronOutputs(IEnumerable<INetworkOutput> outputs, IOutputLayer outputLayer)
+        /// <param name="outputNeurons">The collection of output neurons that the outputs should be mapped to.</param>
+        /// <param name="outputs">The network outputs that will be mapped to output neurons.</param>
+        private void MapOutputsToOutputNeurons(IEnumerable<IOutputNeuron> outputNeurons, IEnumerable<INetworkOutput> outputs)
         {
+            if (outputNeurons == null)
+                throw new ArgumentNullException("outputNeurons");
+
             if (outputs == null)
                 throw new ArgumentNullException("outputs");
 
-            if (outputLayer == null)
-                throw new ArgumentNullException("outputLayer");
+            if (outputNeurons?.Count() != outputs.Count())
+            {
+                throw new ArgumentException("The number of network outputs must equal the number of output neurons.");
+            }
 
-            var outputNeurons = outputLayer.Neurons.OfType<IOutputNeuron>();
-            if (outputs.Count() != outputNeurons.Count())
-                throw new ArgumentException("The number of network outputs must equal the number of neurons in the output layer.");
-
-            // Update each of the network output neuronIds to coordinate with the output layer neuron neuronIds.
+            // Update each of the network output NeuronIds to coordinate with the output layer neuron neuronIds.
             using (var outputsEnumerator = outputs.GetEnumerator())
             using (var outputNeuronsEnumerator = outputNeurons.GetEnumerator())
             {
                 while (outputsEnumerator.MoveNext() && outputNeuronsEnumerator.MoveNext())
                 {
                     var networkNeuron = outputNeuronsEnumerator.Current;
-                    var networkInput = outputsEnumerator.Current;
+                    var networkOutput = outputsEnumerator.Current;
 
-                    networkInput.NeuronId = networkNeuron.Id;
-                    networkNeuron.Description = networkInput.Description;
+                    networkOutput.NeuronId = networkNeuron.Id;
+                    networkNeuron.Description = networkOutput.Description;
                 }
             }
+        }
+
+        /// <summary>
+        /// Fetches and applies the necessary network inputs to the network based on the identified network configuration.
+        /// </summary>
+        /// <param name="network">The neural network that the inputs will be applied to.</param>
+        /// <param name="networkConfigId">The id of the NetworkConfiguration to pull inputs from.</param>
+        /// <param name="companyId">The id of the company that the inputs are chosen for.</param>
+        /// <param name="testDate">The date of the calculated inputs that will be applied to the <paramref name="network"/>.</param>
+        /// <returns>Returns the network outputs after the config inputs have been applied.</returns>
+        private IEnumerable<INetworkOutput> ApplyConfigInputsToNetwork(IDFFNeuralNetwork network, int networkConfigId, int companyId, DateTime testDate)
+        {
+            var networkInputLayer = network.Layers?.OfType<IInputLayer>().First();
+            var inputNeurons = networkInputLayer.Neurons?.OfType<IInputNeuron>();
+            var networkInputs = _datasetService.GetNetworkInputs(networkConfigId, companyId, testDate);
+
+            MapInputsToInputNeurons(inputNeurons, networkInputs);
+
+            // Apply inputs to network and returns network outputs.
+            return network.ApplyInputs(networkInputs);
         }
 
         /// <summary>
@@ -456,7 +412,7 @@ namespace SANNET.Business.Services
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("PredictionService", "The service has been disposed.");
-            
+
             var predictionsToAnalyze = new List<P>();
             var quotes = _quoteService.GetQuotes();
 
@@ -471,7 +427,7 @@ namespace SANNET.Business.Services
             }
 
             // Update actual outcome for each prediction.
-            foreach (var prediction in predictionsToAnalyze)   
+            foreach (var prediction in predictionsToAnalyze)
             {
                 UpdatePredictionWithActualOutcome(prediction);
             }
@@ -488,7 +444,7 @@ namespace SANNET.Business.Services
             prediction.ActualOutcome = _datasetService.GetFiveDayPerformanceDescription(prediction.CompanyId, quote.Date);
             Update(prediction);
         }
-        
+
         #endregion
         #region IDisposable
         /// <summary>
