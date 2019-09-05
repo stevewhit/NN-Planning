@@ -13,13 +13,14 @@ namespace QR.App
     {
         public override void Load()
         {
-            var context = new EfContext(new SANNETContext());
+            var smaContext = new EfContext(new SMAContext());
+            var sannetContext = new EfContext(new SANNETContext());
 
-            Bind<IEfRepository<Company>>().ToMethod(_ => new EfRepository<Company>(context));
-            Bind<IEfRepository<Quote>>().ToMethod(_ => new EfRepository<Quote>(context));
-            Bind<IEfRepository<Prediction>>().ToMethod(_ => new EfRepository<Prediction>(context));
-            Bind<IEfRepository<NetworkConfiguration>>().ToMethod(_ => new EfRepository<NetworkConfiguration>(context));
-            Bind<IDatasetRepository>().ToMethod(_ => new DatasetRepository(context));
+            Bind<IEfRepository<Company>>().ToMethod(_ => new EfRepository<Company>(smaContext));
+            Bind<IEfRepository<Quote>>().ToMethod(_ => new EfRepository<Quote>(smaContext));
+            Bind<IEfRepository<Prediction>>().ToMethod(_ => new EfRepository<Prediction>(sannetContext));
+            Bind<IEfRepository<NetworkConfiguration>>().ToMethod(_ => new EfRepository<NetworkConfiguration>(sannetContext));
+            Bind<IDatasetRepository>().ToMethod(_ => new DatasetRepository(sannetContext));
 
             Bind<ICompanyService<Company>>().ToConstructor(_ => new CompanyService<Company>(Kernel.Get<IEfRepository<Company>>())).InThreadScope();
             Bind<IQuoteService<Quote>>().ToConstructor(_ => new QuoteService<Quote>(Kernel.Get<IEfRepository<Quote>>())).InThreadScope();

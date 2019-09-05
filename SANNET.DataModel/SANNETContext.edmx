@@ -5,6 +5,20 @@
     <!-- SSDL content -->
     <edmx:StorageModels>
     <Schema Namespace="SANNET.DataModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="ApplicationLogs">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Date" Type="datetime" />
+          <Property Name="Thread" Type="nvarchar" MaxLength="255" />
+          <Property Name="Level" Type="nvarchar" MaxLength="50" />
+          <Property Name="Logger" Type="nvarchar" MaxLength="255" />
+          <Property Name="Message" Type="nvarchar(max)" />
+          <Property Name="Exception" Type="nvarchar(max)" />
+          <Property Name="Location" Type="nvarchar" MaxLength="255" />
+          <Property Name="UserId" Type="nvarchar" MaxLength="255" />
+        </EntityType>
         <EntityType Name="NetworkConfigurations">
           <Key>
             <PropertyRef Name="Id" />
@@ -39,6 +53,17 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Function Name="ApplicationLogInsert" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="logDate" Type="datetime" Mode="In" />
+          <Parameter Name="thread" Type="nvarchar" Mode="In" />
+          <Parameter Name="logLevel" Type="nvarchar" Mode="In" />
+          <Parameter Name="logger" Type="nvarchar" Mode="In" />
+          <Parameter Name="message" Type="nvarchar(max)" Mode="In" />
+          <Parameter Name="exception" Type="nvarchar(max)" Mode="In" />
+          <Parameter Name="location" Type="nvarchar" Mode="In" />
+          <Parameter Name="userId" Type="nvarchar" Mode="In" />
+        </Function>
+        <Function Name="ApplicationLogSelect" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
         <Function Name="GetFutureFiveDayPerformance" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
           <Parameter Name="companyId" Type="int" Mode="In" />
           <Parameter Name="startDate" Type="date" Mode="In" />
@@ -52,6 +77,7 @@
           <Parameter Name="endDate" Type="date" Mode="In" />
         </Function>
         <EntityContainer Name="SANNETDataModelStoreContainer">
+          <EntitySet Name="ApplicationLogs" EntityType="Self.ApplicationLogs" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="NetworkConfigurations" EntityType="Self.NetworkConfigurations" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Predictions" EntityType="Self.Predictions" Schema="dbo" store:Type="Tables" />
           <AssociationSet Name="FK_Predictions_NetworkConfigurations" Association="Self.FK_Predictions_NetworkConfigurations">
@@ -64,6 +90,24 @@
     <edmx:ConceptualModels>
       <Schema Namespace="SANNET.DataModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
         <EntityContainer Name="SANNETContext" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="ApplicationLogs" EntityType="SANNET.DataModel.ApplicationLog" />
+          <EntitySet Name="NetworkConfigurations" EntityType="SANNET.DataModel.NetworkConfiguration" />
+          <EntitySet Name="Predictions" EntityType="SANNET.DataModel.Prediction" />
+          <AssociationSet Name="FK_Predictions_NetworkConfigurations" Association="SANNET.DataModel.FK_Predictions_NetworkConfigurations">
+            <End Role="NetworkConfiguration" EntitySet="NetworkConfigurations" />
+            <End Role="Prediction" EntitySet="Predictions" />
+          </AssociationSet>
+          <FunctionImport Name="ApplicationLogInsert">
+            <Parameter Name="logDate" Mode="In" Type="DateTime" />
+            <Parameter Name="thread" Mode="In" Type="String" />
+            <Parameter Name="logLevel" Mode="In" Type="String" />
+            <Parameter Name="logger" Mode="In" Type="String" />
+            <Parameter Name="message" Mode="In" Type="String" />
+            <Parameter Name="exception" Mode="In" Type="String" />
+            <Parameter Name="location" Mode="In" Type="String" />
+            <Parameter Name="userId" Mode="In" Type="String" />
+          </FunctionImport>
+          <FunctionImport Name="ApplicationLogSelect" ReturnType="Collection(SANNET.DataModel.ApplicationLogSelect_Result)" />
           <FunctionImport Name="GetFutureFiveDayPerformance" ReturnType="Collection(SANNET.DataModel.GetFutureFiveDayPerformance_Result)">
             <Parameter Name="companyId" Mode="In" Type="Int32" />
             <Parameter Name="startDate" Mode="In" Type="DateTime" />
@@ -76,13 +120,68 @@
             <Parameter Name="startDate" Mode="In" Type="DateTime" />
             <Parameter Name="endDate" Mode="In" Type="DateTime" />
           </FunctionImport>
-          <EntitySet Name="NetworkConfigurations" EntityType="SANNET.DataModel.NetworkConfiguration" />
-          <EntitySet Name="Predictions" EntityType="SANNET.DataModel.Prediction" />
-          <AssociationSet Name="FK_Predictions_NetworkConfigurations" Association="SANNET.DataModel.FK_Predictions_NetworkConfigurations">
-            <End Role="NetworkConfiguration" EntitySet="NetworkConfigurations" />
-            <End Role="Prediction" EntitySet="Predictions" />
-          </AssociationSet>
         </EntityContainer>
+        <EntityType Name="ApplicationLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Date" Type="DateTime" Precision="3" />
+          <Property Name="Thread" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="Level" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Logger" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="Message" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Exception" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Location" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="UserId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="NetworkConfiguration">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
+          <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
+          <Property Name="NumTrainingMonths" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Predictions" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="NetworkConfiguration" ToRole="Prediction" />
+        </EntityType>
+        <EntityType Name="Prediction">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ConfigurationId" Type="Int32" Nullable="false" />
+          <Property Name="CompanyId" Type="Int32" Nullable="false" />
+          <Property Name="QuoteId" Type="Int32" Nullable="false" />
+          <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="PredictedOutcome" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="ActualOutcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="NetworkConfiguration" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="Prediction" ToRole="NetworkConfiguration" />
+        </EntityType>
+        <Association Name="FK_Predictions_NetworkConfigurations">
+          <End Type="SANNET.DataModel.NetworkConfiguration" Role="NetworkConfiguration" Multiplicity="1" />
+          <End Type="SANNET.DataModel.Prediction" Role="Prediction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NetworkConfiguration">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Prediction">
+              <PropertyRef Name="ConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <ComplexType Name="ApplicationLogSelect_Result">
+          <Property Type="Int32" Name="Id" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="true" Precision="23" />
+          <Property Type="String" Name="Thread" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="Level" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="Logger" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="Message" Nullable="true" />
+          <Property Type="String" Name="Exception" Nullable="true" />
+          <Property Type="String" Name="Location" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="UserId" Nullable="true" MaxLength="255" />
+        </ComplexType>
         <ComplexType Name="GetFutureFiveDayPerformance_Result">
           <Property Type="Int32" Name="QuoteId" Nullable="true" />
           <Property Type="Int32" Name="CompanyId" Nullable="true" />
@@ -120,48 +219,67 @@
           <Property Type="Int32" Name="Output_TriggeredRiseFirst" Nullable="false" />
           <Property Type="Int32" Name="Output_TriggeredFallFirst" Nullable="false" />
         </ComplexType>
-        <EntityType Name="NetworkConfiguration">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
-          <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
-          <Property Name="NumTrainingMonths" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="Predictions" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="NetworkConfiguration" ToRole="Prediction" />
-        </EntityType>
-        <EntityType Name="Prediction">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="ConfigurationId" Type="Int32" Nullable="false" />
-          <Property Name="CompanyId" Type="Int32" Nullable="false" />
-          <Property Name="QuoteId" Type="Int32" Nullable="false" />
-          <Property Name="TrainingStartDate" Type="DateTime" Nullable="false" Precision="0" />
-          <Property Name="TrainingEndDate" Type="DateTime" Nullable="false" Precision="0" />
-          <Property Name="PredictedOutcome" Type="String" Nullable="false" MaxLength="100" FixedLength="false" Unicode="true" />
-          <Property Name="ActualOutcome" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="NetworkConfiguration" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="Prediction" ToRole="NetworkConfiguration" />
-        </EntityType>
-        <Association Name="FK_Predictions_NetworkConfigurations">
-          <End Type="SANNET.DataModel.NetworkConfiguration" Role="NetworkConfiguration" Multiplicity="1" />
-          <End Type="SANNET.DataModel.Prediction" Role="Prediction" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="NetworkConfiguration">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="Prediction">
-              <PropertyRef Name="ConfigurationId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
         <EntityContainerMapping StorageEntityContainer="SANNETDataModelStoreContainer" CdmEntityContainer="SANNETContext">
+          <EntitySetMapping Name="ApplicationLogs">
+            <EntityTypeMapping TypeName="SANNET.DataModel.ApplicationLog">
+              <MappingFragment StoreEntitySet="ApplicationLogs">
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="Location" ColumnName="Location" />
+                <ScalarProperty Name="Exception" ColumnName="Exception" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Logger" ColumnName="Logger" />
+                <ScalarProperty Name="Level" ColumnName="Level" />
+                <ScalarProperty Name="Thread" ColumnName="Thread" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="NetworkConfigurations">
+            <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
+              <MappingFragment StoreEntitySet="NetworkConfigurations">
+                <ScalarProperty Name="NumTrainingMonths" ColumnName="NumTrainingMonths" />
+                <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
+                <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Predictions">
+            <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
+              <MappingFragment StoreEntitySet="Predictions">
+                <ScalarProperty Name="ActualOutcome" ColumnName="ActualOutcome" />
+                <ScalarProperty Name="PredictedOutcome" ColumnName="PredictedOutcome" />
+                <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
+                <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
+                <ScalarProperty Name="ConfigurationId" ColumnName="ConfigurationId" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="ApplicationLogInsert" FunctionName="SANNET.DataModel.Store.ApplicationLogInsert" />
+          <FunctionImportMapping FunctionImportName="ApplicationLogSelect" FunctionName="SANNET.DataModel.Store.ApplicationLogSelect">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.ApplicationLogSelect_Result">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="Thread" ColumnName="Thread" />
+                <ScalarProperty Name="Level" ColumnName="Level" />
+                <ScalarProperty Name="Logger" ColumnName="Logger" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Exception" ColumnName="Exception" />
+                <ScalarProperty Name="Location" ColumnName="Location" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
           <FunctionImportMapping FunctionImportName="GetFutureFiveDayPerformance" FunctionName="SANNET.DataModel.Store.GetFutureFiveDayPerformance">
             <ResultMapping>
               <ComplexTypeMapping TypeName="SANNET.DataModel.GetFutureFiveDayPerformance_Result">
@@ -207,31 +325,7 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
-          <EntitySetMapping Name="NetworkConfigurations">
-            <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
-              <MappingFragment StoreEntitySet="NetworkConfigurations">
-                <ScalarProperty Name="NumTrainingMonths" ColumnName="NumTrainingMonths" />
-                <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
-                <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
-                <ScalarProperty Name="Id" ColumnName="Id" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="Predictions">
-            <EntityTypeMapping TypeName="SANNET.DataModel.Prediction">
-              <MappingFragment StoreEntitySet="Predictions">
-                <ScalarProperty Name="ActualOutcome" ColumnName="ActualOutcome" />
-                <ScalarProperty Name="PredictedOutcome" ColumnName="PredictedOutcome" />
-                <ScalarProperty Name="TrainingEndDate" ColumnName="TrainingEndDate" />
-                <ScalarProperty Name="TrainingStartDate" ColumnName="TrainingStartDate" />
-                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
-                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
-                <ScalarProperty Name="ConfigurationId" ColumnName="ConfigurationId" />
-                <ScalarProperty Name="Id" ColumnName="Id" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          </EntityContainerMapping>
+        </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>
   </edmx:Runtime>

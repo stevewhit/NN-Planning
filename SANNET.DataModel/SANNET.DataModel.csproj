@@ -50,6 +50,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApplicationLog.cs">
+      <DependentUpon>SANNETContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="ApplicationLogSelect_Result.cs">
+      <DependentUpon>SANNETContext.tt</DependentUpon>
+    </Compile>
     <Compile Include="GetFutureFiveDayPerformance_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>

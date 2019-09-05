@@ -64,7 +64,9 @@
     <None Include="App.config" />
     <None Include="Log4Net.config" />
     <None Include="packages.config" />
-    <None Include="secretConnectionStrings.config" />
+    <None Include="secretConnectionStrings.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Framework.Generic\Framework.Generic\Framework.Generic.csproj">
