@@ -39,7 +39,8 @@ namespace SANNET.Business.Services
                 throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
             return networkConfigurationId == 1 ? GetTrainingDataset1(companyId, startDate, endDate) :
-                    throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
+                   networkConfigurationId == 2 ? GetTrainingDataset1(companyId, startDate, endDate) :
+                   throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
         }
 
         /// <summary>
@@ -55,7 +56,8 @@ namespace SANNET.Business.Services
                 throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
             return networkConfigurationId == 1 ? GetNetworkInputs1(companyId, date) :
-                    throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
+                   networkConfigurationId == 2 ? GetNetworkInputs1(companyId, date) :
+                   throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
         }
 
         #region (Inner) Dataset Method 1
@@ -135,12 +137,18 @@ namespace SANNET.Business.Services
         /// <returns></returns>
         private IEnumerable<INetworkInput> GetNetworkInputs1(int companyId, DateTime date)
         {
-            var dataset = _repository.GetTrainingDataset1(companyId, date, date);
+            var dataset = _repository.GetTrainingDataset1(companyId, date, date).ToList();
 
             if (dataset.Count() != 1)
                 throw new InvalidOperationException("Dataset should only contain 1 entry.");
 
             var entry = dataset.First();
+
+            if (entry.Date.Value == new DateTime(2019, 10, 2))
+            {
+                var blah = true;
+            }
+
             var inputs = new List<INetworkInput>
             {
                 // RSI Short
@@ -195,7 +203,7 @@ namespace SANNET.Business.Services
         /// <returns></returns>
         public string GetFiveDayPerformanceDescription(int companyId, DateTime date)
         {
-            var dataset = _repository.GetTrainingDataset1(companyId, date, date);
+            var dataset = _repository.GetTrainingDataset1(companyId, date, date).ToList();
 
             if (dataset.Count() != 1)
                 throw new InvalidOperationException("Dataset should only contain 1 entry.");
