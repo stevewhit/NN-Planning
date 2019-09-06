@@ -1,4 +1,5 @@
 ﻿using Framework.Generic.EntityFramework;
+using Framework.Generic.Utility;
 using NeuralNetwork.Generic.Datasets;
 using NeuralNetwork.Generic.Layers;
 using NeuralNetwork.Generic.Networks;
@@ -258,7 +259,7 @@ namespace SANNET.Business.Services
             // Sync dataset NeuronIds with the network NeuronIds.
             MapTrainingEntriesToNeurons(network, trainingDatasetEntries);
 
-            return TrainNetwork(network, trainingDatasetEntries);
+            return TrainNetwork(network, trainingDatasetEntries.ToList());
         }
 
         /// <summary>
@@ -290,9 +291,20 @@ namespace SANNET.Business.Services
         /// <param name="network">The neural network that is to be trained.</param>
         /// <param name="trainingDatasetEntries">The training iterations to train the network with.</param>
         /// <returns>Returns the average training cost of the final iteration.</returns>
-        private double TrainNetwork(IDFFNeuralNetwork network, IEnumerable<INetworkTrainingIteration> trainingDatasetEntries)
+        private IDFFNeuralNetwork TrainNetwork(IDFFNeuralNetwork network, IList<INetworkTrainingIteration> trainingDatasetEntries)
         {
-            return network.Train(trainingDatasetEntries).Average(i => i.TrainingCost);
+            var bestTrainingCost = double.MaxValue;
+            while(true)
+            {
+                trainingDatasetEntries.Shuffle();
+
+                // TODO: Implement Clone() method for NeuralNetwork and store the BEST network.
+                var trainingCost = network.Train(trainingDatasetEntries).Average(i => i.TrainingCost);
+                if (trainingCost >= bestTrainingCost)
+                    break;
+            }
+
+            return network;
         }
 
         /// <summary>
