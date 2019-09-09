@@ -53,7 +53,7 @@ namespace SANNET.Business.Services
 
         public NetworkConfigurationService(IEfRepository<N> repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException("repository");
         }
 
         #region INetworkConfigurationService<N>

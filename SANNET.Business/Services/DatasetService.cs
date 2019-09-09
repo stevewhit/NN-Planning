@@ -44,7 +44,7 @@ namespace SANNET.Business.Services
 
         public DatasetService(IDatasetRepository repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException("repository");
         }
 
         #region IDatasetService
@@ -121,14 +121,14 @@ namespace SANNET.Business.Services
                 var trainingIteration = new NetworkTrainingIteration();
 
                 // RSI Short
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? throw new InvalidOperationException("Cannot set activation level to a null value."))});
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? 0)});
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSIShortOverBought });
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSIShortOverSold });
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverBought });
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverSold });
 
                 // RSI Long
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? throw new InvalidOperationException("Cannot set activation level to a null value.")) });
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? 0)});
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSILongOverBought });
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSILongOverSold });
                 trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverBought });
@@ -187,14 +187,14 @@ namespace SANNET.Business.Services
             return new List<INetworkInput>()
             {
                 // RSI Short
-                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? throw new InvalidOperationException("Cannot set activation level to a null value.")) },
+                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? 0)},
                 new NetworkInput() { ActivationLevel = entry.IsRSIShortOverBought },
                 new NetworkInput() { ActivationLevel = entry.IsRSIShortOverSold },
                 new NetworkInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverBought },
                 new NetworkInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverSold },
 
                 // RSI Long
-                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? throw new InvalidOperationException("Cannot set activation level to a null value.")) },
+                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? 0)},
                 new NetworkInput() { ActivationLevel = entry.IsRSILongOverBought },
                 new NetworkInput() { ActivationLevel = entry.IsRSILongOverSold },
                 new NetworkInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverBought },

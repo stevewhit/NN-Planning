@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SANNET.Business.Repositories
 {
@@ -35,6 +36,7 @@ namespace SANNET.Business.Repositories
         IEnumerable<GetTestingDataset2_Result> GetTestingDataset2(int companyId);
     }
 
+    [ExcludeFromCodeCoverage]
     public class DatasetRepository : IDatasetRepository
     {
         private bool _isDisposed = false;
