@@ -62,7 +62,9 @@ namespace SANNET.Business.Services
     public class PredictionService<P, Q, C, N> : IPredictionService<P> where P : Prediction, new() where Q : Quote where C : Company where N : NetworkConfiguration
     {
         private bool _isDisposed = false;
-        private const string PREDICTION_DESCRIPTION_FORMAT = "[({0}%) {1}]";
+
+        public const string PREDICTION_DESCRIPTION_FORMAT = "[({0}%) {1}]";
+        public const double TRAINING_ERROR_ALLOWANCE = .05;
 
         private readonly IEfRepository<P> _predictionRepository;
         private readonly IQuoteService<Q> _quoteService;
@@ -195,9 +197,9 @@ namespace SANNET.Business.Services
             var newPredictions = new List<P>();
             
             // Generate predictions for all quotes, in EACH network configuration.
-            foreach (var quote in quotes.Where(q => q.Id == 2500))
+            foreach (var quote in quotes)
             {
-                foreach (var config in networkConfigs.Where(c => c.Id == 3))
+                foreach (var config in networkConfigs)
                 {
                     // If the prediction for this quote and network config doesn't exist, create one.
                     if (!existingPredictions.Any(p => p.QuoteId == quote.Id && p.NetworkConfigurationId == config.Id))
@@ -322,8 +324,8 @@ namespace SANNET.Business.Services
 
                 // TODO: Implement Clone() method for NeuralNetwork and store the BEST network.
                 var trainingCost = network.Train(trainingDatasetEntries).Average(i => i.TrainingCost);
-                if (trainingCost >= bestTrainingCost)
-                    break;
+                //if (trainingCost >= bestTrainingCost)
+                //    break;
 
                 bestTrainingCost = trainingCost;
                 iterations++;
@@ -332,6 +334,10 @@ namespace SANNET.Business.Services
 
                 var inputs = trainingDatasetEntries.ToList()[11].Inputs;
                 var outputs2 = network.ApplyInputs(inputs).ToList();
+
+                // Test each of the training entries on the network to determine if the network is trained.
+                if (GetIsNetworkTrained(network, trainingDatasetEntries))
+                    break;
             }
 
             //var inputs = trainingDatasetEntries.ToList()[5].Inputs;
@@ -355,6 +361,41 @@ namespace SANNET.Business.Services
             //var outputs2 = network.ApplyInputs(inputs).ToList();
 
             return network;
+        }
+
+        /// <summary>
+        /// Cycles through each of the <paramref name="trainingDatasetEntries"/> and applies the inputs to the <paramref name="network"/>. Afterwards, the <paramref name="network"/> outputs are
+        /// tested against the expected values from the <paramref name="trainingDatasetEntries"/> to determine if each of the outputs is within the allowed
+        /// TRAINING_FAULT_TOLERANCE level.
+        /// </summary>
+        /// <param name="network">The network that is being tested against.</param>
+        /// <param name="trainingDatasetEntries">The training entries that test whether the network is trained or not.</param>
+        /// <returns>Returns true/false indicating the the <paramref name="network"/> is trained according to the <paramref name="trainingDatasetEntries"/>.</returns>
+        private bool GetIsNetworkTrained(IDFFNeuralNetwork network, IEnumerable<INetworkTrainingIteration> trainingDatasetEntries)
+        {
+            foreach (var entry in trainingDatasetEntries)
+            {
+                var networkOutputs = network.ApplyInputs(entry.Inputs);
+                
+                using (var networkOutputsEnumerator = networkOutputs.GetEnumerator())
+                using (var trainingOutputsEnumerator = entry.Outputs.GetEnumerator())
+                {
+                    while (networkOutputsEnumerator.MoveNext() && trainingOutputsEnumerator.MoveNext())
+                    {
+                        var networkOutput = networkOutputsEnumerator.Current;
+                        var trainingOutput = trainingOutputsEnumerator.Current;
+
+                        // If the network output-activation level is {TRAINING_ERROR_ALLOWANCE} away from the expected activation level
+                        // for each output of each dataset entry, the network is considered trained.
+                        if (Math.Abs(trainingOutput.ExpectedActivationLevel - networkOutput.ActivationLevel) > TRAINING_ERROR_ALLOWANCE)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
