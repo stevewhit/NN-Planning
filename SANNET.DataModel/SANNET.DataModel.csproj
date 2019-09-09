@@ -53,13 +53,16 @@
     <Compile Include="ApplicationLog.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="ApplicationLogSelect_Result.cs">
+    <Compile Include="GetTestingDataset1_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="GetFutureFiveDayPerformance_Result.cs">
+    <Compile Include="GetTestingDataset2_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
     <Compile Include="GetTrainingDataset1_Result.cs">
+      <DependentUpon>SANNETContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GetTrainingDataset2_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
     <Compile Include="NetworkConfiguration.cs">
@@ -87,31 +90,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.Config" />
-    <None Include="Database Scripts\Build-Database.bat" />
     <EntityDeploy Include="SANNETContext.edmx">
       <Generator>EntityModelCodeGenerator</Generator>
       <LastGenOutput>SANNETContext.Designer.cs</LastGenOutput>
     </EntityDeploy>
+    <None Include="Database Scripts\Build-Database.bat" />
     <None Include="packages.config" />
     <None Include="SANNETContext.edmx.diagram">
       <DependentUpon>SANNETContext.edmx</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Database Scripts\Creation Scripts\0 - Create Database.sql" />
-    <Content Include="Database Scripts\Creation Scripts\0DEV - Create Development Database.sql" />
-    <Content Include="Database Scripts\Creation Scripts\1 - Security\0 - Create Login User SANNETAdmin.sql" />
-    <Content Include="Database Scripts\Creation Scripts\1 - Security\1 - Create Database User SANNETAdmin.sql" />
-    <Content Include="Database Scripts\Creation Scripts\2 - Tables\1 - Create Predictions Table.sql" />
-    <Content Include="Database Scripts\Creation Scripts\3 - User Defined Types\1 - Create DateValueCrossoversType Type.sql" />
-    <Content Include="Database Scripts\Creation Scripts\4 - User Defined Functions\1 - Create GetDataValueCrossovers Function.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\1 - Create GetCommodityChannelIndex Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\2 - Create GetCommodityChannelIndexCrosses Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\3 - Create GetRelativeStrengthIndex Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\4 - Create GetRelativeStrengthIndexCrosses Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\5 - Create GetSimpleMovingAverage Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\6 - Create GetSimpleMovingAverageCrosses Procedure.sql" />
-    <Content Include="Database Scripts\Creation Scripts\5 - Stored Procedures\7 - Create GetFutureFiveDayPerformance Procedure.sql" />
     <Content Include="SANNETContext.Context.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>SANNETContext.Context.cs</LastGenOutput>
@@ -123,13 +112,7 @@
       <LastGenOutput>SANNETContext.cs</LastGenOutput>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Database Scripts\Creation Scripts\6 - Data Population\" />
-    <Folder Include="Database Scripts\Delta Scripts\1 - Security\" />
-    <Folder Include="Database Scripts\Delta Scripts\2 - Tables\" />
-    <Folder Include="Database Scripts\Delta Scripts\3 - Stored Procedures\" />
-    <Folder Include="Database Scripts\Delta Scripts\4 - Data Population\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>

@@ -31,7 +31,6 @@ namespace QR.App
                                                                                                                                               Kernel.Get<ICompanyService<Company>>(), 
                                                                                                                                               Kernel.Get<IDatasetService>(), 
                                                                                                                                               Kernel.Get<INetworkConfigurationService<NetworkConfiguration>>())).InThreadScope();
-                        
             Bind<ILog>().ToMethod(_ => LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType));
         }
     }

@@ -8,9 +8,33 @@ namespace SANNET.Business.Services
 {
     public interface IDatasetService : IDisposable
     {
-        IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int networkConfigurationId, int companyId, DateTime startDate, DateTime endDate);
-        IEnumerable<INetworkInput> GetNetworkInputs(int networkConfigurationId, int companyId, DateTime date);
-        string GetFiveDayPerformanceDescription(int companyId, DateTime date);
+        /// <summary>
+        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// </summary>
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="startDate">The start date of the training dataset.</param>
+        /// <param name="endDate">The end date of the training dataset.</param>
+        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
+        IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int datasetRetrievalMethodId, int companyId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// </summary>
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network inputs should be generated for.</param>
+        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        IEnumerable<INetworkInput> GetNetworkInputs(int datasetRetrievalMethodId, int companyId, DateTime date);
+
+        /// <summary>
+        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// </summary>
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network outputs should be generated for.</param>
+        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int datasetRetrievalMethodId, int companyId, DateTime date);
     }
 
     public class DatasetService : IDatasetService
@@ -26,49 +50,66 @@ namespace SANNET.Business.Services
         #region IDatasetService
 
         /// <summary>
-        /// 
+        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
         /// </summary>
-        /// <param name="networkConfigurationId"></param>
-        /// <param name="companyId"></param>
-        /// <param name="startDate"></param>
-        /// <param name="endDate"></param>
-        /// <returns></returns>
-        public IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int networkConfigurationId, int companyId, DateTime startDate, DateTime endDate)
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="startDate">The start date of the training dataset.</param>
+        /// <param name="endDate">The end date of the training dataset.</param>
+        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
+        public IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int datasetRetrievalMethodId, int companyId, DateTime startDate, DateTime endDate)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
-            return networkConfigurationId == 1 ? GetTrainingDataset1(companyId, startDate, endDate) :
-                   networkConfigurationId == 2 ? GetTrainingDataset1(companyId, startDate, endDate) :
-                   throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
+            return datasetRetrievalMethodId == 1 ? GetTrainingDataset1(companyId, startDate, endDate) :
+                   datasetRetrievalMethodId == 2 ? GetTrainingDataset2(-1) :
+                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
         }
 
         /// <summary>
-        /// 
+        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
         /// </summary>
-        /// <param name="networkConfigurationId"></param>
-        /// <param name="companyId"></param>
-        /// <param name="date"></param>
-        /// <returns></returns>
-        public IEnumerable<INetworkInput> GetNetworkInputs(int networkConfigurationId, int companyId, DateTime date)
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network inputs should be generated for.</param>
+        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        public IEnumerable<INetworkInput> GetNetworkInputs(int datasetRetrievalMethodId, int companyId, DateTime date)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
-            return networkConfigurationId == 1 ? GetNetworkInputs1(companyId, date) :
-                   networkConfigurationId == 2 ? GetNetworkInputs1(companyId, date) :
-                   throw new ArgumentException($"Network Configuration not supported: {networkConfigurationId}.");
+            return datasetRetrievalMethodId == 1 ? GetNetworkInputs1(companyId, date) :
+                   datasetRetrievalMethodId == 2 ? GetNetworkInputs2(companyId) :
+                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
+        }
+
+        /// <summary>
+        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// </summary>
+        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network outputs should be generated for.</param>
+        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        public IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int datasetRetrievalMethodId, int companyId, DateTime date)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
+
+            return datasetRetrievalMethodId == 1 ? GetTestingDataset1(companyId, date) :
+                   datasetRetrievalMethodId == 2 ? GetTestingDataset2(companyId) :
+                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
         }
 
         #region (Inner) Dataset Method 1
 
         /// <summary>
-        /// 
+        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.
         /// </summary>
-        /// <param name="companyId"></param>
-        /// <param name="startDate"></param>
-        /// <param name="endDate"></param>
-        /// <returns></returns>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="startDate">The start date of the training dataset.</param>
+        /// <param name="endDate">The end date of the training dataset.</param>
+        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
         private IEnumerable<INetworkTrainingIteration> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate)
         {
             var dataset = _repository.GetTrainingDataset1(companyId, startDate, endDate);
@@ -130,26 +171,20 @@ namespace SANNET.Business.Services
         }
 
         /// <summary>
-        /// 
+        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.
         /// </summary>
-        /// <param name="companyId"></param>
-        /// <param name="date"></param>
-        /// <returns></returns>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network inputs should be generated for.</param>
+        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
         private IEnumerable<INetworkInput> GetNetworkInputs1(int companyId, DateTime date)
         {
             var dataset = _repository.GetTrainingDataset1(companyId, date, date).ToList();
 
-            if (dataset.Count() != 1)
-                throw new InvalidOperationException("Dataset should only contain 1 entry.");
+            if (dataset.Count() > 1)
+                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
 
             var entry = dataset.First();
-
-            if (entry.Date.Value == new DateTime(2019, 10, 2))
-            {
-                var blah = true;
-            }
-
-            var inputs = new List<INetworkInput>
+            return new List<INetworkInput>()
             {
                 // RSI Short
                 new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? throw new InvalidOperationException("Cannot set activation level to a null value.")) },
@@ -191,25 +226,109 @@ namespace SANNET.Business.Services
                 new NetworkInput() { ActivationLevel = entry.SMALongJustCrossedOverShort },
                 new NetworkInput() { ActivationLevel = entry.SMALongGreaterThanShortForAwhile }
             };
-
-            return inputs;
         }
 
         /// <summary>
-        /// 
+        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.
         /// </summary>
-        /// <param name="companyId"></param>
-        /// <param name="date"></param>
-        /// <returns></returns>
-        public string GetFiveDayPerformanceDescription(int companyId, DateTime date)
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network outputs should be generated for.</param>
+        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        private IEnumerable<INetworkOutput> GetTestingDataset1(int companyId, DateTime date)
         {
-            var dataset = _repository.GetTrainingDataset1(companyId, date, date).ToList();
+            var dataset = _repository.GetTestingDataset1(companyId, date).ToList();
 
-            if (dataset.Count() != 1)
-                throw new InvalidOperationException("Dataset should only contain 1 entry.");
+            if (dataset.Count() > 1)
+                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
 
             var entry = dataset.First();
-            return $"[({entry.Output_TriggeredRiseFirst * 100.0}%) Triggered Rise First], [({entry.Output_TriggeredFallFirst * 100.0}%) Triggered Fall First]";
+            return new List<INetworkOutput>()
+            {
+                // Outputs
+                new NetworkOutput() { ActivationLevel = entry.Output_TriggeredRiseFirst, Description = "Triggered Rise First" },
+                new NetworkOutput() { ActivationLevel = entry.Output_TriggeredFallFirst, Description = "Triggered Fall First" }
+            };
+        }
+
+        #endregion
+
+        #region (Inner) Dataset Method 2
+
+        /// <summary>
+        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.
+        /// </summary>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="startDate">The start date of the training dataset.</param>
+        /// <param name="endDate">The end date of the training dataset.</param>
+        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
+        private IEnumerable<INetworkTrainingIteration> GetTrainingDataset2(int id)
+        {
+            var dataset = _repository.GetTrainingDataset2(id).ToList();
+            var trainingIterations = new List<INetworkTrainingIteration>();
+
+            // Convert each dataset entry into a network training iteration
+            foreach (var entry in dataset)
+            {
+                var trainingIteration = new NetworkTrainingIteration();
+                
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.I1.Value });
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.I2.Value });
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.I3.Value });
+                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.I4.Value });
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.O1.Value, Description="O1" });
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.O2.Value, Description = "O2" });
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.O3.Value, Description = "O3" });
+                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.O4.Value, Description = "O4" });
+                
+                trainingIterations.Add(trainingIteration);
+            }
+
+            return trainingIterations;
+        }
+        
+
+
+
+
+        private IEnumerable<INetworkInput> GetNetworkInputs2(int id)
+        {
+            var dataset = _repository.GetTrainingDataset2(id).ToList();
+
+            if (dataset.Count() > 1)
+                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
+
+            var entry = dataset.First();
+            return new List<INetworkInput>()
+            {
+                new NetworkInput() { ActivationLevel = entry.I1.Value },
+                new NetworkInput() { ActivationLevel = entry.I2.Value },
+                new NetworkInput() { ActivationLevel = entry.I3.Value },
+                new NetworkInput() { ActivationLevel = entry.I4.Value },
+            };
+        }
+
+        /// <summary>
+        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.
+        /// </summary>
+        /// <param name="companyId">The id of the company.</param>
+        /// <param name="date">The date that the network outputs should be generated for.</param>
+        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
+        private IEnumerable<INetworkOutput> GetTestingDataset2(int lastId)
+        {
+            var dataset = _repository.GetTestingDataset2(lastId).ToList();
+
+            if (dataset.Count() > 1)
+                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
+
+            var entry = dataset.First();
+            return new List<INetworkOutput>()
+            {
+                // Outputs
+                new NetworkOutput() { ActivationLevel = entry.O1.Value, Description = "O1" },
+                new NetworkOutput() { ActivationLevel = entry.O2.Value, Description = "O2" },
+                new NetworkOutput() { ActivationLevel = entry.O3.Value, Description = "O3" },
+                new NetworkOutput() { ActivationLevel = entry.O4.Value, Description = "O4" }
+            };
         }
 
         #endregion

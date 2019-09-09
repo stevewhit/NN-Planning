@@ -2,6 +2,7 @@
 using SANNET.DataModel;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.SqlClient;
 
 namespace SANNET.Business.Repositories
@@ -18,14 +19,20 @@ namespace SANNET.Business.Repositories
         IEnumerable<GetTrainingDataset1_Result> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate);
 
         /// <summary>
-        /// Returns the performance of the company over the next five days for the specified <paramref name="date"/>.
+        /// Returns the Dataset1 testing dataset values for the company for the specified <paramref name="date"/>.
         /// </summary>
-        /// <param name="companyId">The id of the company to receive SMA crosses from.</param>
-        /// <param name="date">The date to return the five day performance of.</param>
-        /// <param name="riseMultiplierTrigger">The multiplier-level to figure out if the stock rose to that level.</param>
-        /// <param name="fallMultiplierTrigger">The multiplier-level to figure out if the stock fell to that level.</param>
-        /// <returns></returns>
-        IEnumerable<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(int companyId, DateTime date, double riseMultiplierTrigger, double fallMultiplierTrigger);
+        /// <param name="companyId">The id of the company to receive values for.</param>
+        /// <param name="date">The date of the returned testing values.</param>
+        /// <returns>Returns the computed testing dataset values for the company for the specified <paramref name="date"/>.</returns>
+        IEnumerable<GetTestingDataset1_Result> GetTestingDataset1(int companyId, DateTime date);
+
+
+
+
+
+
+        IEnumerable<GetTrainingDataset2_Result> GetTrainingDataset2(int id);
+        IEnumerable<GetTestingDataset2_Result> GetTestingDataset2(int companyId);
     }
 
     public class DatasetRepository : IDatasetRepository
@@ -38,10 +45,10 @@ namespace SANNET.Business.Repositories
             _context = context;
         }
 
-        #region IDatasetRepository
+        #region IDatasetRepository<D>
 
         /// <summary>
-        /// Returns the METHOD 1 training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.
+        /// Returns the Dataset1 training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.
         /// </summary>
         /// <param name="companyId">The id of the company to receive values from.</param>
         /// <param name="startDate">The starting date of the returned training values.</param>
@@ -59,23 +66,46 @@ namespace SANNET.Business.Repositories
         }
 
         /// <summary>
-        /// Returns the performance of the company over the next five days for the specified <paramref name="date"/>.
+        /// Returns the Dataset1 testing dataset values for the company for the specified <paramref name="date"/>.
         /// </summary>
-        /// <param name="companyId">The id of the company to receive SMA crosses from.</param>
-        /// <param name="date">The date to return the five day performance of.</param>
-        /// <param name="riseMultiplierTrigger">The multiplier-level to figure out if the stock rose to that level.</param>
-        /// <param name="fallMultiplierTrigger">The multiplier-level to figure out if the stock fell to that level.</param>
-        /// <returns></returns>
-        public IEnumerable<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(int companyId, DateTime date, double riseMultiplierTrigger, double fallMultiplierTrigger)
+        /// <param name="companyId">The id of the company to receive values for.</param>
+        /// <param name="date">The date of the returned testing values.</param>
+        /// <returns>Returns the computed testing dataset values for the company for the specified <paramref name="date"/>.</returns>
+        public IEnumerable<GetTestingDataset1_Result> GetTestingDataset1(int companyId, DateTime date)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
 
-            return _context.ExecuteStoredProcedure<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance @companyId, @date, @riseMultiplierTrigger, @fallMultiplierTrigger",
+            return _context.ExecuteStoredProcedure<GetTestingDataset1_Result>("GetTestingDataset1 @companyId, @date",
                                             new SqlParameter("companyId", companyId),
-                                            new SqlParameter("date", date),
-                                            new SqlParameter("riseMultiplierTrigger", riseMultiplierTrigger),
-                                            new SqlParameter("fallMultiplierTrigger", fallMultiplierTrigger));
+                                            new SqlParameter("date", date));
+        }
+
+
+
+
+
+
+
+        
+        public IEnumerable<GetTrainingDataset2_Result> GetTrainingDataset2(int id)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
+
+            return _context.ExecuteStoredProcedure<GetTrainingDataset2_Result>("GetTrainingDataset2 @id",
+                                            new SqlParameter("id", id));
+        }
+        
+
+
+        public IEnumerable<GetTestingDataset2_Result> GetTestingDataset2(int lastid)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
+
+            return _context.ExecuteStoredProcedure<GetTestingDataset2_Result>("GetTestingDataset1 @lastId",
+                                            new SqlParameter("lastId", lastid));
         }
 
         #endregion

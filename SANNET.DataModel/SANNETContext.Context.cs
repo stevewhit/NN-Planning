@@ -31,71 +31,26 @@ namespace SANNET.DataModel
         public virtual DbSet<NetworkConfiguration> NetworkConfigurations { get; set; }
         public virtual DbSet<Prediction> Predictions { get; set; }
     
-        public virtual int ApplicationLogInsert(Nullable<System.DateTime> logDate, string thread, string logLevel, string logger, string message, string exception, string location, string userId)
-        {
-            var logDateParameter = logDate.HasValue ?
-                new ObjectParameter("logDate", logDate) :
-                new ObjectParameter("logDate", typeof(System.DateTime));
-    
-            var threadParameter = thread != null ?
-                new ObjectParameter("thread", thread) :
-                new ObjectParameter("thread", typeof(string));
-    
-            var logLevelParameter = logLevel != null ?
-                new ObjectParameter("logLevel", logLevel) :
-                new ObjectParameter("logLevel", typeof(string));
-    
-            var loggerParameter = logger != null ?
-                new ObjectParameter("logger", logger) :
-                new ObjectParameter("logger", typeof(string));
-    
-            var messageParameter = message != null ?
-                new ObjectParameter("message", message) :
-                new ObjectParameter("message", typeof(string));
-    
-            var exceptionParameter = exception != null ?
-                new ObjectParameter("exception", exception) :
-                new ObjectParameter("exception", typeof(string));
-    
-            var locationParameter = location != null ?
-                new ObjectParameter("location", location) :
-                new ObjectParameter("location", typeof(string));
-    
-            var userIdParameter = userId != null ?
-                new ObjectParameter("userId", userId) :
-                new ObjectParameter("userId", typeof(string));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("ApplicationLogInsert", logDateParameter, threadParameter, logLevelParameter, loggerParameter, messageParameter, exceptionParameter, locationParameter, userIdParameter);
-        }
-    
-        public virtual ObjectResult<ApplicationLogSelect_Result> ApplicationLogSelect()
-        {
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<ApplicationLogSelect_Result>("ApplicationLogSelect");
-        }
-    
-        public virtual ObjectResult<GetFutureFiveDayPerformance_Result> GetFutureFiveDayPerformance(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate, Nullable<decimal> riseMultiplierTrigger, Nullable<decimal> fallMultiplierTrigger)
+        public virtual ObjectResult<GetTestingDataset1_Result> GetTestingDataset1(Nullable<int> companyId, Nullable<System.DateTime> date)
         {
             var companyIdParameter = companyId.HasValue ?
                 new ObjectParameter("companyId", companyId) :
                 new ObjectParameter("companyId", typeof(int));
     
-            var startDateParameter = startDate.HasValue ?
-                new ObjectParameter("startDate", startDate) :
-                new ObjectParameter("startDate", typeof(System.DateTime));
+            var dateParameter = date.HasValue ?
+                new ObjectParameter("date", date) :
+                new ObjectParameter("date", typeof(System.DateTime));
     
-            var endDateParameter = endDate.HasValue ?
-                new ObjectParameter("endDate", endDate) :
-                new ObjectParameter("endDate", typeof(System.DateTime));
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetTestingDataset1_Result>("GetTestingDataset1", companyIdParameter, dateParameter);
+        }
     
-            var riseMultiplierTriggerParameter = riseMultiplierTrigger.HasValue ?
-                new ObjectParameter("riseMultiplierTrigger", riseMultiplierTrigger) :
-                new ObjectParameter("riseMultiplierTrigger", typeof(decimal));
+        public virtual ObjectResult<GetTestingDataset2_Result> GetTestingDataset2(Nullable<int> lastId)
+        {
+            var lastIdParameter = lastId.HasValue ?
+                new ObjectParameter("lastId", lastId) :
+                new ObjectParameter("lastId", typeof(int));
     
-            var fallMultiplierTriggerParameter = fallMultiplierTrigger.HasValue ?
-                new ObjectParameter("fallMultiplierTrigger", fallMultiplierTrigger) :
-                new ObjectParameter("fallMultiplierTrigger", typeof(decimal));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetFutureFiveDayPerformance_Result>("GetFutureFiveDayPerformance", companyIdParameter, startDateParameter, endDateParameter, riseMultiplierTriggerParameter, fallMultiplierTriggerParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetTestingDataset2_Result>("GetTestingDataset2", lastIdParameter);
         }
     
         public virtual ObjectResult<GetTrainingDataset1_Result> GetTrainingDataset1(Nullable<int> companyId, Nullable<System.DateTime> startDate, Nullable<System.DateTime> endDate)
@@ -113,6 +68,15 @@ namespace SANNET.DataModel
                 new ObjectParameter("endDate", typeof(System.DateTime));
     
             return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetTrainingDataset1_Result>("GetTrainingDataset1", companyIdParameter, startDateParameter, endDateParameter);
+        }
+    
+        public virtual ObjectResult<GetTrainingDataset2_Result> GetTrainingDataset2(Nullable<int> id)
+        {
+            var idParameter = id.HasValue ?
+                new ObjectParameter("id", id) :
+                new ObjectParameter("id", typeof(int));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetTrainingDataset2_Result>("GetTrainingDataset2", idParameter);
         }
     }
 }

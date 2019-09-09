@@ -11,16 +11,16 @@ namespace SANNET.DataModel
 {
     using System;
     
-    public partial class ApplicationLogSelect_Result
+    public partial class GetTrainingDataset2_Result
     {
-        public int Id { get; set; }
-        public Nullable<System.DateTime> Date { get; set; }
-        public string Thread { get; set; }
-        public string Level { get; set; }
-        public string Logger { get; set; }
-        public string Message { get; set; }
-        public string Exception { get; set; }
-        public string Location { get; set; }
-        public string UserId { get; set; }
+        public Nullable<int> Id { get; set; }
+        public Nullable<int> I1 { get; set; }
+        public Nullable<int> I2 { get; set; }
+        public Nullable<int> I3 { get; set; }
+        public Nullable<int> I4 { get; set; }
+        public Nullable<int> O1 { get; set; }
+        public Nullable<int> O2 { get; set; }
+        public Nullable<int> O3 { get; set; }
+        public Nullable<int> O4 { get; set; }
     }
 }

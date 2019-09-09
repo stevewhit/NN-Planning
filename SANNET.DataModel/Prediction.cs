@@ -15,7 +15,7 @@ namespace SANNET.DataModel
     public partial class Prediction
     {
         public int Id { get; set; }
-        public int ConfigurationId { get; set; }
+        public int NetworkConfigurationId { get; set; }
         public int CompanyId { get; set; }
         public int QuoteId { get; set; }
         public System.DateTime TrainingStartDate { get; set; }

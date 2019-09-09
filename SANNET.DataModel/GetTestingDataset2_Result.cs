@@ -11,12 +11,11 @@ namespace SANNET.DataModel
 {
     using System;
     
-    public partial class GetFutureFiveDayPerformance_Result
+    public partial class GetTestingDataset2_Result
     {
-        public Nullable<int> QuoteId { get; set; }
-        public Nullable<int> CompanyId { get; set; }
-        public Nullable<System.DateTime> Date { get; set; }
-        public int TriggeredRiseFirst { get; set; }
-        public int TriggeredFallFirst { get; set; }
+        public Nullable<int> O1 { get; set; }
+        public Nullable<int> O2 { get; set; }
+        public Nullable<int> O3 { get; set; }
+        public Nullable<int> O4 { get; set; }
     }
 }
