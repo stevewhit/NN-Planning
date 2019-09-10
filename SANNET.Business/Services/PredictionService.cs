@@ -64,7 +64,7 @@ namespace SANNET.Business.Services
         private bool _isDisposed = false;
 
         public const string PREDICTION_DESCRIPTION_FORMAT = "[({0}%) {1}]";
-        public const double TRAINING_ERROR_ALLOWANCE = .05;
+        public const double TRAINING_ERROR_ALLOWANCE = .1;
 
         private readonly IEfRepository<P> _predictionRepository;
         private readonly IQuoteService<Q> _quoteService;
@@ -194,7 +194,7 @@ namespace SANNET.Business.Services
             var quotes = _quoteService.GetQuotes().ToList();
             var networkConfigs = _networkConfigurationService.GetConfigurations().ToList();
             var existingPredictions = GetPredictions().ToList();
-            var newPredictions = new List<P>();
+            //var newPredictions = new List<P>();
             
             // Generate predictions for all quotes, in EACH network configuration.
             foreach (var quote in quotes)
@@ -204,12 +204,18 @@ namespace SANNET.Business.Services
                     // If the prediction for this quote and network config doesn't exist, create one.
                     if (!existingPredictions.Any(p => p.QuoteId == quote.Id && p.NetworkConfigurationId == config.Id))
                     {
-                        newPredictions.Add(GenerateQuotePrediction(quote, config));
+                        var generatedPrediction = GenerateQuotePrediction(quote, config);
+                        if (generatedPrediction != null)
+                        {
+                            Add(generatedPrediction);
+                            UpdatePredictionWithActualOutcome(generatedPrediction, quote);
+                        }
+                        //newPredictions.Add(GenerateQuotePrediction(quote, config));
                     }
                 }
             }
 
-            AddRange(newPredictions.Where(p => p != null));
+            //AddRange(newPredictions.Where(p => p != null));
         }
 
         /// <summary>
@@ -244,7 +250,7 @@ namespace SANNET.Business.Services
                 QuoteId = quote.Id,
                 TrainingStartDate = GetTrainingStartDateForQuote(quote, networkConfig),
                 TrainingEndDate = GetTrainingEndDateForQuote(quote),
-                PredictedOutcome = string.Join(",", outputs.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel, o.Description)))
+                PredictedOutcome = string.Join(",", outputs.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel * 100.0, o.Description)))
             };
         }
         
@@ -317,7 +323,7 @@ namespace SANNET.Business.Services
             //dataset.AddRange(trainingDatasetEntries);
 
             var iterations = 0;
-            var bestTrainingCost = double.MaxValue;
+            //var bestTrainingCost = double.MaxValue;
             while (true)
             {
                 trainingDatasetEntries.Shuffle();
@@ -327,17 +333,16 @@ namespace SANNET.Business.Services
                 //if (trainingCost >= bestTrainingCost)
                 //    break;
 
-                bestTrainingCost = trainingCost;
-                iterations++;
+                //bestTrainingCost = trainingCost;
+                
 
-                Console.WriteLine(trainingCost);
-
-                var inputs = trainingDatasetEntries.ToList()[11].Inputs;
-                var outputs2 = network.ApplyInputs(inputs).ToList();
+                Console.WriteLine($"{iterations} : {trainingCost}");
 
                 // Test each of the training entries on the network to determine if the network is trained.
-                if (GetIsNetworkTrained(network, trainingDatasetEntries))
+                if (iterations >= 10000 || GetIsNetworkTrained(network, trainingDatasetEntries))
                     break;
+
+                iterations++;
             }
 
             //var inputs = trainingDatasetEntries.ToList()[5].Inputs;
@@ -612,7 +617,7 @@ namespace SANNET.Business.Services
 
             var actualOutcome = _datasetService.GetExpectedNetworkOutputs(prediction.NetworkConfiguration.DatasetRetrievalMethodId, quote.CompanyId, quote.Date);
 
-            prediction.ActualOutcome = string.Join(",", actualOutcome.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel, o.Description)));
+            prediction.ActualOutcome = string.Join(",", actualOutcome.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel * 100.0, o.Description)));
             Update(prediction);
         }
 

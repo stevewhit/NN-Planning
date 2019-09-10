@@ -2,7 +2,6 @@
 using SANNET.DataModel;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Diagnostics.CodeAnalysis;
 
@@ -26,14 +25,6 @@ namespace SANNET.Business.Repositories
         /// <param name="date">The date of the returned testing values.</param>
         /// <returns>Returns the computed testing dataset values for the company for the specified <paramref name="date"/>.</returns>
         IEnumerable<GetTestingDataset1_Result> GetTestingDataset1(int companyId, DateTime date);
-
-
-
-
-
-
-        IEnumerable<GetTrainingDataset2_Result> GetTrainingDataset2(int id);
-        IEnumerable<GetTestingDataset2_Result> GetTestingDataset2(int companyId);
     }
 
     [ExcludeFromCodeCoverage]
@@ -81,33 +72,6 @@ namespace SANNET.Business.Repositories
             return _context.ExecuteStoredProcedure<GetTestingDataset1_Result>("GetTestingDataset1 @companyId, @date",
                                             new SqlParameter("companyId", companyId),
                                             new SqlParameter("date", date));
-        }
-
-
-
-
-
-
-
-        
-        public IEnumerable<GetTrainingDataset2_Result> GetTrainingDataset2(int id)
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
-
-            return _context.ExecuteStoredProcedure<GetTrainingDataset2_Result>("GetTrainingDataset2 @id",
-                                            new SqlParameter("id", id));
-        }
-        
-
-
-        public IEnumerable<GetTestingDataset2_Result> GetTestingDataset2(int lastid)
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
-
-            return _context.ExecuteStoredProcedure<GetTestingDataset2_Result>("GetTestingDataset1 @lastId",
-                                            new SqlParameter("lastId", lastid));
         }
 
         #endregion
