@@ -14,3 +14,5 @@ In the current state, the application generates and analyzes predictions based o
 - [ ] Consider more volatile stocks. Will possibly have to ONLY generate predictions for more volatile stocks?
 - [ ] Add stored procedures for new indicators. (Stochastic oscillator..)
 - [ ] Try different periods for existing technical indicator stored procedures.
+- [ ] Try different NetworkConfigurations (hidden layers, hidden layer neurons) to help speed up training without sacrificing correctness.
+- [ ] Try different training date-ranges.
