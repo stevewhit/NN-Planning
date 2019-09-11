@@ -13,18 +13,25 @@ GO
 PRINT 'Creating "GetStochasticIndicator" stored procedure...'
 GO
 
--- =============================================
+-- ================================================================================================
 -- Author:		Steve Whitmire Jr.
 -- Create date: 09-10-2019
 -- Description:	Returns the Stochastic Indicator calculations for a given company.
 --				This indicator measures the momentum of price and often indicates
 --				overbought and oversold values using 80 and 20 respectively.
--- =============================================
+--
+--		%K = (Most Recent Closing Price - Lowest Low) / (Highest High - Lowest Low) × 100
+--		%D = @kAvgPeriod-day SMA of %K
+--		---
+--		Lowest Low = lowest low of the specified time period
+--		Highest High = highest high of the specified time period
+-- ================================================================================================
 CREATE PROCEDURE [dbo].[GetStochasticIndicator] 
 	@companyId int,
 	@startDate date,
 	@endDate date,
-	@siPeriod int
+	@stochasticPeriod int,
+	@movingAveragePeriod int = 3
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -91,17 +98,38 @@ BEGIN
 			     END as [PeriodLow]
 	FROM @companyQuotes companyQuotesOuter
 	ORDER BY [Date]
+						 
+	/*********************************************************************************************
+		Table to hold %K values
+		---
+		%K = (Most Recent Closing Price - Lowest Low) / (Highest High - Lowest Low) × 100
+	*********************************************************************************************/
+	DECLARE @kValues TABLE
+	(
+		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT,
+        	[K] DECIMAL(10, 2)
+	)			
+						 
+	SELECT quotes.[QuoteId],
+		[CompanyQuoteNum],
+		(100.00 * (quotes.Low - highLows.PeriodLow)) / (highLows.PeriodHigh - highLows.PeriodLow) as [K]
+	FROM @companyQuotes quotes INNER JOIN @periodHighLows highLows ON quotes.QuoteId = highLows.QuoteId			 
 
 	/*********************************************************************************************
 		Result table that calculates the Stochastic values
+						 
+		%K = (Most Recent Closing Price - Lowest Low) / (Highest High - Lowest Low) × 100
+		%D = @kAvgPeriod-day SMA of %K
+		---
+		Lowest Low = lowest low of the specified time period
+		Highest High = highest high of the specified time period
 	*********************************************************************************************/
 	SELECT quotes.[QuoteId],
-		   quotes.Date,
-		   CASE WHEN quotes.Low = highLows.PeriodLow
-				THEN 100.00
-				ELSE (highLows.PeriodHigh - highLows.PeriodLow) / (quotes.Low - highLows.PeriodLow)
-				END as [SI]
-	FROM @companyQuotes quotes INNER JOIN @periodHighLows highLows ON quotes.QuoteId = highLows.QuoteId
+		   quotes.[Date],
+		   [K],
+		   (SELECT AVG(KInner) FROM (SELECT kInner.[K] as [KInner] FROM @kValues kInner WHERE kInner.CompanyQuoteNum <= KOuter.CompanyQuoteNum AND kInner.CompanyQuoteNum >= (kOuter.CompanyQuoteNum - @kAvgPeriod + 1)) as [D]
+	FROM @companyQuotes quotes INNER JOIN @kValues kValues ON quotes.QuoteId = kValues.QuoteId
 	WHERE quotes.[Date] >= @startDate AND quotes.[Date] <= @endDate
 END
 GO
