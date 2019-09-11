@@ -3,14 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetTrainingDataset1')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetMethodDataset_1')
 BEGIN
-	PRINT 'Dropping "GetTrainingDataset1" stored procedure...'
-	DROP PROCEDURE GetTrainingDataset1
+	PRINT 'Dropping "GetMethodDataset_1" stored procedure...'
+	DROP PROCEDURE GetMethodDataset_1
 END
 GO
 
-PRINT 'Creating "GetTrainingDataset1" stored procedure...'
+PRINT 'Creating "GetMethodDataset_1" stored procedure...'
 GO
 
 -- =============================================
@@ -18,7 +18,7 @@ GO
 -- Create date: 09-03-2019
 -- Description:	Calculates and returns the training dataset using method 1 for the dates between @startDate and @endDate.
 -- =============================================
-CREATE PROCEDURE [dbo].[GetTrainingDataset1] 
+CREATE PROCEDURE [dbo].[GetMethodDataset_1] 
 	@companyId int,
 	@startDate date,
 	@endDate date
