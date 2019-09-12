@@ -31,10 +31,12 @@ CREATE PROCEDURE [dbo].[GetStochasticIndicator]
 	@startDate date,
 	@endDate date,
 	@stochasticPeriod int,
-	@movingAveragePeriod int = 3
+	@movingAveragePeriod int
 AS
 BEGIN
 	SET NOCOUNT ON;
+
+	-- Verified 09-11-2019 --
 
 	/*********************************************
 		Table to hold numbered quotes.
@@ -82,20 +84,20 @@ BEGIN
 
 	INSERT INTO @periodHighLows
 	SELECT [QuoteId],
-		   CASE WHEN [CompanyQuoteNum] <= @siPeriod
-			     THEN NULL
-		   	     ELSE (SELECT MAX(High) 
-					   FROM (SELECT [High]
-						     FROM @companyQuotes companyQuotesInner
-							 WHERE companyQuotesInner.CompanyQuoteNum <= companyQuotesOuter.CompanyQuoteNum AND companyQuotesInner.CompanyQuoteNum >= (companyQuotesOuter.CompanyQuoteNum - @siPeriod + 1)) as companyQuotesInnerInner)
-			     END as [PeriodHigh],
-		   CASE WHEN [CompanyQuoteNum] <= @siPeriod
-			     THEN NULL
-		   	     ELSE (SELECT MIN(High) 
-					   FROM (SELECT [High]
-						     FROM @companyQuotes companyQuotesInner
-							 WHERE companyQuotesInner.CompanyQuoteNum <= companyQuotesOuter.CompanyQuoteNum AND companyQuotesInner.CompanyQuoteNum >= (companyQuotesOuter.CompanyQuoteNum - @siPeriod + 1)) as companyQuotesInnerInner)
-			     END as [PeriodLow]
+		   CASE WHEN [CompanyQuoteNum] < @stochasticPeriod
+			    THEN NULL
+		   	    ELSE (SELECT MAX(High) 
+				      FROM (SELECT [High]
+					        FROM @companyQuotes companyQuotesInner
+						    WHERE companyQuotesInner.CompanyQuoteNum <= companyQuotesOuter.CompanyQuoteNum AND companyQuotesInner.CompanyQuoteNum >= (companyQuotesOuter.CompanyQuoteNum - @stochasticPeriod + 1)) as companyQuotesInnerInner)
+			    END as [PeriodHigh],
+		   CASE WHEN [CompanyQuoteNum] < @stochasticPeriod
+			    THEN NULL
+		   	    ELSE (SELECT MIN(Low) 
+				      FROM (SELECT [Low]
+					        FROM @companyQuotes companyQuotesInner
+						    WHERE companyQuotesInner.CompanyQuoteNum <= companyQuotesOuter.CompanyQuoteNum AND companyQuotesInner.CompanyQuoteNum >= (companyQuotesOuter.CompanyQuoteNum - @stochasticPeriod + 1)) as companyQuotesInnerInner)
+			    END as [PeriodLow]
 	FROM @companyQuotes companyQuotesOuter
 	ORDER BY [Date]
 						 
@@ -108,12 +110,13 @@ BEGIN
 	(
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT,
-        	[K] DECIMAL(10, 2)
+       	[StochasticK] DECIMAL(10, 2)
 	)			
-						 
+	
+	INSERT INTO @kValues					 
 	SELECT quotes.[QuoteId],
-		[CompanyQuoteNum],
-		(100.00 * (quotes.Low - highLows.PeriodLow)) / (highLows.PeriodHigh - highLows.PeriodLow) as [K]
+		   [CompanyQuoteNum],
+		   (100.00 * (quotes.[Close] - highLows.PeriodLow)) / (highLows.PeriodHigh - highLows.PeriodLow) as [StochasticK]
 	FROM @companyQuotes quotes INNER JOIN @periodHighLows highLows ON quotes.QuoteId = highLows.QuoteId			 
 
 	/*********************************************************************************************
@@ -127,9 +130,12 @@ BEGIN
 	*********************************************************************************************/
 	SELECT quotes.[QuoteId],
 		   quotes.[Date],
-		   [K],
-		   (SELECT AVG(KInner) FROM (SELECT kInner.[K] as [KInner] FROM @kValues kInner WHERE kInner.CompanyQuoteNum <= KOuter.CompanyQuoteNum AND kInner.CompanyQuoteNum >= (kOuter.CompanyQuoteNum - @kAvgPeriod + 1)) as [D]
-	FROM @companyQuotes quotes INNER JOIN @kValues kValues ON quotes.QuoteId = kValues.QuoteId
+		   [StochasticK],
+		   CASE WHEN (quotes.[CompanyQuoteNum] < (@movingAveragePeriod + @stochasticPeriod - 1))
+		        THEN NULL
+				ELSE (SELECT AVG(KInner.KInner) FROM (SELECT kInner.[StochasticK] as [KInner] FROM @kValues kInner WHERE kInner.CompanyQuoteNum <= kOuter.CompanyQuoteNum AND kInner.CompanyQuoteNum >= (kOuter.CompanyQuoteNum - @movingAveragePeriod + 1)) as KInner)
+				END  as [StochasticD]
+	FROM @companyQuotes quotes INNER JOIN @kValues kOuter ON quotes.QuoteId = kOuter.QuoteId
 	WHERE quotes.[Date] >= @startDate AND quotes.[Date] <= @endDate
 END
 GO

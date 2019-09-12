@@ -24,7 +24,10 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @quotes TABLE
+	/*********************************************************
+		Table to hold numbered quotes for a given company.
+	**********************************************************/
+	DECLARE @companyQuotes TABLE
 	(
 		[Id] INT UNIQUE,
 		[CompanyQuoteNum] INT,
@@ -37,7 +40,7 @@ BEGIN
         [Volume] BIGINT
 	)
 
-	INSERT INTO @quotes
+	INSERT INTO @companyQuotes
 	SELECT [Id],
 	   (SELECT [RowNum] 
 	    FROM (SELECT Id, ROW_NUMBER() OVER(ORDER BY Id) as [RowNum] 
@@ -57,9 +60,9 @@ BEGIN
 		Return table with/without filter applied.
 	****************************************************/
 	IF @companyId IS NOT NULL
-		SELECT * FROM @quotes WHERE [CompanyId] = @companyId ORDER BY [Date]
+		SELECT * FROM @companyQuotes WHERE [CompanyId] = @companyId ORDER BY [Date]
 	ELSE
-		SELECT * FROM @quotes ORDER BY [Date]
+		SELECT * FROM @companyQuotes ORDER BY [Date]
 END
 GO
 
