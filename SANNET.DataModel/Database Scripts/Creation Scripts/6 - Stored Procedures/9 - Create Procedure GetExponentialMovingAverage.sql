@@ -72,6 +72,34 @@ BEGIN
         [EMA] DECIMAL(10, 2)
 	)
 
+	DECLARE @previousEMA DECIMAL(10, 2),
+			@currentEMA DECIMAL(10, 2),
+			@currentClose DECIMAL(10, 2)
+
+	DECLARE @minQuoteId INT = (SELECT MIN(QuoteId) FROM @companyQuotes)
+	DECLARE @currentQuoteId INT = @minQuoteId
+	DECLARE @maxQuoteId INT = (SELECT MAX(QuoteId) FROM @companyQuotes)
+	DECLARE @smoothingConst DECIMAL(10, 2) = (2.0 / (1.0 + @emaPeriod))
+
+	WHILE (@currentQuoteId <= @maxQuoteId)
+	BEGIN
+		SET @currentClose = (SELECT [Close] FROM @companyQuotes WHERE [QuoteId] = @currentQuoteId)
+		SET @currentEMA = (CASE WHEN @currentQuoteId < @minQuoteId + @emaPeriod - 1
+								THEN NULL
+								ELSE (CASE WHEN @currentQuoteId = @minQuoteId + @emaPeriod - 1
+								          THEN (SELECT AVG([CloseInner]) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[QuoteId] <= @currentQuoteId AND quotesInner.[QuoteId] >= (@currentQuoteId - @emaPeriod + 1)) as SMA)
+										  ELSE ((@smoothingConst * (@currentClose - @previousEMA)) + @previousEMA)
+										  END)
+								END)
+
+		INSERT INTO @emaValues ([QuoteId], [EMA]) VALUES (@currentQuoteId, @currentEMA)
+
+		SET @previousEMA = @currentEMA
+		SET @currentQuoteId = @currentQuoteId + 1
+	END
+
+	SELECT * FROM @emaValues
+	--WHERE -startdate --> enddate
 
 
 	-- Use while loop because we have to reach-back to the previous row's EMA value.
