@@ -29,20 +29,16 @@ BEGIN
 
 	-- Verified NEVER --
 
-	/*********************************************
-		Table to hold numbered quotes.
-	**********************************************/
+	/*******************************************************
+		Table to hold numbered quotes for a company.
+	********************************************************/
 	DECLARE @companyQuotes TABLE
 	(
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT,
 		[CompanyId] INT,
         [Date] DATE,
-        [Open] DECIMAL(10, 2),
-        [High] DECIMAL(10, 2),
-        [Low] DECIMAL(10, 2),
-        [Close] DECIMAL(10, 2),
-        [Volume] BIGINT
+        [Close] DECIMAL(10, 2)
 	)
 
 	INSERT INTO @companyQuotes
@@ -54,17 +50,19 @@ BEGIN
 	    WHERE rowNums.Id = quotesOuter.Id) as [CompanyQuoteNum],
        [CompanyId],
        [Date],
-       [Open],
-       [High],
-       [Low],
-       [Close],
-       [Volume]
+       [Close]
 	FROM [StockMarketData].[dbo].[Quotes] quotesOuter
 	WHERE [CompanyId] = @companyId
 	ORDER BY [Date]	
 	 
 	/*********************************************************************************************
-		Table for QuoteId && EMAvalues
+		Return dataset for EMA values.
+		---
+		EMA Calculations:
+			1. Skip @emaPeriod rows
+			2. Row @emaPeriod (first EMA) = SMA(@emaPeriod)
+			3. Every following EMA = (SmoothingConst * (TodaysClose - EMAprevious)) + EMAprevious
+						  SmoothingConst = 2 / (period + 1)
 	*********************************************************************************************/
 	DECLARE @emaValues TABLE
 	(
@@ -98,17 +96,8 @@ BEGIN
 		SET @currentQuoteId = @currentQuoteId + 1
 	END
 
-	SELECT * FROM @emaValues
-	--WHERE -startdate --> enddate
-
-
-	-- Use while loop because we have to reach-back to the previous row's EMA value.
-
-
-
-
-	-- First EMA = SMA(period)
-	-- Every EMA afterwards: EMA = (SmoothingConst * (TodaysClose - EMAprevious)) + EMAprevious
-	--							==> SmoothingConst = 2 / (period + 1)
+	SELECT [QuoteId], [EMA] 
+	FROM @emaValues
+	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate
 END
 GO
