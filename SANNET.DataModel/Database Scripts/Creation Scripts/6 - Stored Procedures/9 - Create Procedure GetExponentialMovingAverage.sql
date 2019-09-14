@@ -27,7 +27,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	-- Verified NEVER --
+	-- Verified 09-13-2019 --
 
 	/*******************************************************
 		Table to hold numbered quotes for a company.
@@ -96,8 +96,9 @@ BEGIN
 		SET @currentQuoteId = @currentQuoteId + 1
 	END
 
-	SELECT [QuoteId], [EMA] 
-	FROM @emaValues
-	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate
+	SELECT quotes.[QuoteId], 
+		   ema.[EMA] 
+	FROM @emaValues ema INNER JOIN @companyQuotes quotes ON ema.QuoteId = quotes.QuoteId
+	WHERE [Date] >= @startDate AND [Date] <= @endDate
 END
 GO
