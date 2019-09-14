@@ -29,7 +29,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	-- Verified NEVER --
+	-- Verified 09-14-2019 --
 
 	/*******************************************************
 		Table to hold numbered quotes for a company.
