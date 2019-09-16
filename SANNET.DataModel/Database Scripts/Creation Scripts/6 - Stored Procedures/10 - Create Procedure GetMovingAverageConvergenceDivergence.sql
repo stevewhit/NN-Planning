@@ -37,7 +37,7 @@ BEGIN
 	DECLARE @companyQuotes TABLE
 	(
 		[QuoteId] INT UNIQUE,
-		[CompanyQuoteNum] INT,
+		[CompanyQuoteNum] INT UNIQUE,
 		[CompanyId] INT,
         [Date] DATE,
         [Close] DECIMAL(10, 2)
@@ -65,33 +65,36 @@ BEGIN
 	DECLARE @macdShortValues TABLE
 	(
 		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT UNIQUE,
         [MACDShort] DECIMAL(10, 2)
 	)
 
 	DECLARE @previousMACDShort DECIMAL(10, 2),
 			@currentMACDShort DECIMAL(10, 2),
-			@currentClose DECIMAL(10, 2)
+			@currentClose DECIMAL(10, 2),
+			@currentQuoteId INT
 
-	DECLARE @minQuoteId INT = (SELECT MIN(QuoteId) FROM @companyQuotes)
-	DECLARE @currentQuoteId INT = @minQuoteId
-	DECLARE @maxQuoteId INT = (SELECT MAX(QuoteId) FROM @companyQuotes)
+	DECLARE @minRowNum INT = (SELECT MIN([CompanyQuoteNum]) FROM @companyQuotes)
+	DECLARE @currentRowNum INT = @minRowNum
+	DECLARE @maxRowNum INT = (SELECT MAX([CompanyQuoteNum]) FROM @companyQuotes)
 	DECLARE @smoothingConst DECIMAL(16, 6) = (2.0 / (1.0 + @macdPeriodShort))
 
-	WHILE (@currentQuoteId <= @maxQuoteId)
+	WHILE (@currentRowNum <= @maxRowNum)
 	BEGIN
-		SET @currentClose = (SELECT [Close] FROM @companyQuotes WHERE [QuoteId] = @currentQuoteId)
-		SET @currentMACDShort = (CASE WHEN @currentQuoteId < @minQuoteId + @macdPeriodShort - 1
+		SET @currentQuoteId = (SELECT [QuoteId] FROM @companyQuotes WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentClose = (SELECT [Close] FROM @companyQuotes WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentMACDShort = (CASE WHEN @currentRowNum < @minRowNum + @macdPeriodShort - 1
 								THEN NULL
-								ELSE (CASE WHEN @currentQuoteId = @minQuoteId + @macdPeriodShort - 1
-								          THEN (SELECT AVG([CloseInner]) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[QuoteId] <= @currentQuoteId AND quotesInner.[QuoteId] >= (@currentQuoteId - @macdPeriodShort + 1)) as SMA)
+								ELSE (CASE WHEN @currentRowNum = @minRowNum + @macdPeriodShort - 1
+								          THEN (SELECT AVG([CloseInner]) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[CompanyQuoteNum] <= @currentRowNum AND quotesInner.[CompanyQuoteNum] >= (@currentRowNum - @macdPeriodShort + 1)) as SMA)
 										  ELSE ((@smoothingConst * (@currentClose - @previousMACDShort)) + @previousMACDShort)
 										  END)
 								END)
 
-		INSERT INTO @macdShortValues ([QuoteId], [MACDShort]) VALUES (@currentQuoteId, @currentMACDShort)
+		INSERT INTO @macdShortValues ([QuoteId], [CompanyQuoteNum], [MACDShort]) VALUES (@currentQuoteId, @currentRowNum, @currentMACDShort)
 
 		SET @previousMACDShort = @currentMACDShort
-		SET @currentQuoteId = @currentQuoteId + 1
+		SET @currentRowNum = @currentRowNum + 1
 	END
 
 	/*********************************************************************************************
@@ -102,30 +105,32 @@ BEGIN
 	DECLARE @macdLongValues TABLE
 	(
 		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT UNIQUE,
         [MACDLong] DECIMAL(10, 2)
 	)
 
 	DECLARE @previousMACDLong DECIMAL(10, 2),
 			@currentMACDLong DECIMAL(10, 2)
 
-	SET @currentQuoteId = @minQuoteId
+	SET @currentRowNum = @minRowNum
 	SET @smoothingConst = (2.0 / (1.0 + @macdPeriodLong))
 
-	WHILE (@currentQuoteId <= @maxQuoteId)
+	WHILE (@currentRowNum <= @maxRowNum)
 	BEGIN
-		SET @currentClose = (SELECT [Close] FROM @companyQuotes WHERE [QuoteId] = @currentQuoteId)
-		SET @currentMACDLong = (CASE WHEN @currentQuoteId < @minQuoteId + @macdPeriodLong - 1
+		SET @currentQuoteId = (SELECT [QuoteId] FROM @companyQuotes WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentClose = (SELECT [Close] FROM @companyQuotes WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentMACDLong = (CASE WHEN @currentRowNum < @minRowNum + @macdPeriodLong - 1
 								THEN NULL
-								ELSE (CASE WHEN @currentQuoteId = @minQuoteId + @macdPeriodLong - 1
-								          THEN (SELECT AVG([CloseInner]) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[QuoteId] <= @currentQuoteId AND quotesInner.[QuoteId] >= (@currentQuoteId - @macdPeriodLong + 1)) as SMA)
+								ELSE (CASE WHEN @currentRowNum = @minRowNum + @macdPeriodLong - 1
+								          THEN (SELECT AVG([CloseInner]) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[CompanyQuoteNum] <= @currentRowNum AND quotesInner.[CompanyQuoteNum] >= (@currentRowNum - @macdPeriodLong + 1)) as SMA)
 										  ELSE ((@smoothingConst * (@currentClose - @previousMACDLong)) + @previousMACDLong)
 										  END)
 								END)
 
-		INSERT INTO @macdLongValues ([QuoteId], [MACDLong]) VALUES (@currentQuoteId, @currentMACDLong)
+		INSERT INTO @macdLongValues ([QuoteId], [CompanyQuoteNum], [MACDLong]) VALUES (@currentQuoteId, @currentRowNum, @currentMACDLong)
 
 		SET @previousMACDLong = @currentMACDLong
-		SET @currentQuoteId = @currentQuoteId + 1
+		SET @currentRowNum = @currentRowNum + 1
 	END
 
 	/*********************************************************************************************
@@ -136,6 +141,7 @@ BEGIN
 	DECLARE @macdValues TABLE
 	(
 		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT UNIQUE,
         [MACDShort] DECIMAL(10, 2),
 		[MACDLong] DECIMAL(10, 2),
 		[MACD] DECIMAL(10, 2)
@@ -143,6 +149,7 @@ BEGIN
 
 	INSERT INTO @macdValues
 	SELECT macdShort.[QuoteId],
+		   macdShort.[CompanyQuoteNum],
 		   [MACDShort],
 		   [MACDLong],
 		   [MACDShort] - [MACDLong] as [MACD]
@@ -164,16 +171,17 @@ BEGIN
 			@currentMACDCombined DECIMAL(10, 2),
 			@currentMACD DECIMAL(10, 2)
 
-	SET @currentQuoteId = @minQuoteId
+	SET @currentRowNum = @minRowNum
 	SET @smoothingConst = (2.0 / (1.0 + @macdSignalPeriod))
 
-	WHILE (@currentQuoteId <= @maxQuoteId)
+	WHILE (@currentRowNum <= @maxRowNum)
 	BEGIN
-		SET @currentMACD = (SELECT [MACD] FROM @macdValues WHERE [QuoteId] = @currentQuoteId)
-		SET @currentMACDCombined = (CASE WHEN @currentQuoteId < @minQuoteId + @macdPeriodLong + @macdSignalPeriod - 2
+		SET @currentQuoteId = (SELECT [QuoteId] FROM @companyQuotes WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentMACD = (SELECT [MACD] FROM @macdValues WHERE [CompanyQuoteNum] = @currentRowNum)
+		SET @currentMACDCombined = (CASE WHEN @currentRowNum < @minRowNum + @macdPeriodLong + @macdSignalPeriod - 2
 										THEN NULL
-										ELSE (CASE WHEN @currentQuoteId = @minQuoteId + @macdPeriodLong + @macdSignalPeriod - 2
-												   THEN (SELECT AVG([MACDInner]) FROM (SELECT macdValuesInner.[MACD] as [MACDInner] FROM @macdValues macdValuesInner WHERE macdValuesInner.[QuoteId] <= @currentQuoteId AND macdValuesInner.[QuoteId] >= (@currentQuoteId - @macdSignalPeriod + 1)) as SMA)
+										ELSE (CASE WHEN @currentRowNum = @minRowNum + @macdPeriodLong + @macdSignalPeriod - 2
+												   THEN (SELECT AVG([MACDInner]) FROM (SELECT macdValuesInner.[MACD] as [MACDInner] FROM @macdValues macdValuesInner WHERE macdValuesInner.[CompanyQuoteNum] <= @currentRowNum AND macdValuesInner.[CompanyQuoteNum] >= (@currentRowNum - @macdSignalPeriod + 1)) as SMA)
 												   ELSE ((@smoothingConst * (@currentMACD - @previousMACDCombined)) + @previousMACDCombined)
 												   END)
 										END)
@@ -181,13 +189,14 @@ BEGIN
 		INSERT INTO @macdSignalLineValues ([QuoteId], [MACDSignal]) VALUES (@currentQuoteId, @currentMACDCombined)
 
 		SET @previousMACDCombined = @currentMACDCombined
-		SET @currentQuoteId = @currentQuoteId + 1
+		SET @currentRowNum = @currentRowNum + 1
 	END
 
 	/*********************************************************************************************
 		Return MACD results
 	*********************************************************************************************/
 	SELECT quotes.[QuoteId],
+		   quotes.[CompanyId],
 		   quotes.[Date],
 		   [MACD],
 		   [MACDSignal],

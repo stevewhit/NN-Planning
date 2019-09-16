@@ -129,6 +129,7 @@ BEGIN
 		Highest High = highest high of the specified time period
 	*********************************************************************************************/
 	SELECT quotes.[QuoteId],
+		   quotes.[CompanyId],
 		   quotes.[Date],
 		   [StochasticK],
 		   CASE WHEN (quotes.[CompanyQuoteNum] < (@movingAveragePeriod + @stochasticPeriod - 1))
