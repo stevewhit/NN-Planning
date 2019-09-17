@@ -33,6 +33,48 @@ SELECT
 	(SANNET.dbo.GetTrendLineSlope((SELECT [Id], [Close] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[Id] <= quotesOuter.[Id]))) as Slope
 FROM StockMarketData.dbo.Quotes quotesOuter
 ```
+```
+/*
+	(@quoteId from stored procedure argument)
+
+	DECLARE @trendLineSlope = slope of [Close] over past 4-6 weeks? 2-3 months??
+
+	IF @trendLineSlope is positive (for the quote that was passed in)
+	BEGIN
+		
+		-- Create and populate all indicator tables here (RSI, CCI, Stoch, SMA.. etc)
+
+		-- Only return training data where the trendlineslope is positive
+		FOREACH companyQuote
+		BEGIN
+			SET @trendLineSlope = slope of [Close] over past 4-6 weeks? 2-3 months??
+
+			IF @trendLineSlope is positive 
+			BEGIN
+				-- Return dataset
+			END
+		END
+	END
+	ELSE
+		Return empty dataset.
+
+
+	Days off: 15days ==> 2080 hours => 120 hours missed (accounted for)
+	Hours / yr = 2080 - 120 = 1960
+
+	Salary: 90 => 45.92/hr
+	401k: 6% => 3.06/hr
+	Total: 48.98
+
+	Salary: 105 => 53.57/hr
+	401k: 6% => 3.21/hr
+	Total: 56.78
+	
+	Salary: 110 => 56.12
+	401k: 6% => 3.37/hr
+	Total: 59.49
+*/
+```
 
 ## Indicators
 ### Stochastic Indicator
