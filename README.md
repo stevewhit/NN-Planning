@@ -17,6 +17,23 @@ In the current state, the application generates and analyzes predictions based o
 - [ ] Try different NetworkConfigurations (hidden layers, hidden layer neurons) to help speed up training without sacrificing correctness.
 - [ ] Try different training date-ranges.
 
+
+``` SQL
+DECLARE @closeValues IdValues;
+
+INSERT INTO @closeValues
+SELECT [Id], [Close]
+FROM StockMarketData.dbo.Quotes
+WHERE CompanyId = 3
+
+DECLARE @slope DECIMAL(10, 4) = SANNET.dbo.GetTrendLineSlope(@closeValues)
+SELECT @slope
+
+SELECT 
+	(SANNET.dbo.GetTrendLineSlope((SELECT [Id], [Close] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[Id] <= quotesOuter.[Id]))) as Slope
+FROM StockMarketData.dbo.Quotes quotesOuter
+```
+
 ## Indicators
 ### Stochastic Indicator
 The stochastic indicator is a momentum indicator developed by George C. Lane in the 1950s, which shows the position of the most recent closing price relative to the previous high-low range. The indicator measures momentum by comparing the closing price with the previous trading range over a specific period of time.
