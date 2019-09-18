@@ -3,14 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetMovingAverageConvergenceDivergence')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetMovingAverageConvergenceDivergenceValues')
 BEGIN
-	PRINT 'Dropping "GetMovingAverageConvergenceDivergence" stored procedure...'
-	DROP PROCEDURE GetMovingAverageConvergenceDivergence
+	PRINT 'Dropping "GetMovingAverageConvergenceDivergenceValues" function...'
+	DROP FUNCTION GetMovingAverageConvergenceDivergenceValues
 END
 GO
 
-PRINT 'Creating "GetMovingAverageConvergenceDivergence" stored procedure...'
+PRINT 'Creating "GetMovingAverageConvergenceDivergenceValues" function...'
 GO
 
 -- =============================================
@@ -18,16 +18,26 @@ GO
 -- Create date: 09-13-2019
 -- Description:	Returns the Moving Average Convergence Divergence (MACD) calculations for a given company.
 -- =============================================
-CREATE PROCEDURE [dbo].[GetMovingAverageConvergenceDivergence] 
+CREATE FUNCTION [dbo].[GetMovingAverageConvergenceDivergenceValues] 
+(
 	@companyId int,
 	@startDate date,
 	@endDate date,
 	@macdPeriodShort int,
 	@macdPeriodLong int,
 	@macdSignalPeriod int
+)
+RETURNS @macdReturnValues TABLE
+(
+	[QuoteId] INT UNIQUE, 
+	[CompanyId] INT,  
+	[Date] DATE UNIQUE, 
+	[MACD] DECIMAL(9, 4),
+	[MACDSignal] DECIMAL(9, 4),
+	[MACDHistogram] DECIMAL(9, 4)
+)
 AS
 BEGIN
-	SET NOCOUNT ON;
 
 	-- Verified 09-14-2019 --
 
@@ -39,23 +49,13 @@ BEGIN
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT UNIQUE,
 		[CompanyId] INT,
-        [Date] DATE,
-        [Close] DECIMAL(10, 2)
+        [Date] DATE UNIQUE,
+        [Close] DECIMAL(9, 3)
 	)
 
 	INSERT INTO @companyQuotes
-	SELECT [Id] as [QuoteId],
-	   (SELECT [RowNum] 
-	    FROM (SELECT Id, ROW_NUMBER() OVER(ORDER BY [Date]) as [RowNum] 
-		      FROM [StockMarketData].dbo.Quotes quotes 
-			  WHERE quotes.CompanyId = quotesOuter.CompanyId) rowNums 
-	    WHERE rowNums.Id = quotesOuter.Id) as [CompanyQuoteNum],
-       [CompanyId],
-       [Date],
-       [Close]
-	FROM [StockMarketData].[dbo].[Quotes] quotesOuter
-	WHERE [CompanyId] = @companyId
-	ORDER BY [Date]	
+	SELECT [Id], [CompanyQuoteNum], [CompanyId], [Date], [Close] 
+	FROM GetCompanyQuotes(@companyId)
 	 
 	/*********************************************************************************************
 		Short-period MACD values
@@ -66,18 +66,18 @@ BEGIN
 	(
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT UNIQUE,
-        [MACDShort] DECIMAL(10, 2)
+        [MACDShort] DECIMAL(9, 4)
 	)
 
-	DECLARE @previousMACDShort DECIMAL(10, 2),
-			@currentMACDShort DECIMAL(10, 2),
-			@currentClose DECIMAL(10, 2),
+	DECLARE @previousMACDShort DECIMAL(9, 4),
+			@currentMACDShort DECIMAL(9, 4),
+			@currentClose DECIMAL(9, 3),
 			@currentQuoteId INT
 
 	DECLARE @minRowNum INT = (SELECT MIN([CompanyQuoteNum]) FROM @companyQuotes)
 	DECLARE @currentRowNum INT = @minRowNum
 	DECLARE @maxRowNum INT = (SELECT MAX([CompanyQuoteNum]) FROM @companyQuotes)
-	DECLARE @smoothingConst DECIMAL(16, 6) = (2.0 / (1.0 + @macdPeriodShort))
+	DECLARE @smoothingConst DECIMAL(9, 4) = (2.0 / (1.0 + @macdPeriodShort))
 
 	WHILE (@currentRowNum <= @maxRowNum)
 	BEGIN
@@ -106,11 +106,11 @@ BEGIN
 	(
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT UNIQUE,
-        [MACDLong] DECIMAL(10, 2)
+        [MACDLong] DECIMAL(9, 4)
 	)
 
-	DECLARE @previousMACDLong DECIMAL(10, 2),
-			@currentMACDLong DECIMAL(10, 2)
+	DECLARE @previousMACDLong DECIMAL(9, 4),
+			@currentMACDLong DECIMAL(9, 4)
 
 	SET @currentRowNum = @minRowNum
 	SET @smoothingConst = (2.0 / (1.0 + @macdPeriodLong))
@@ -142,9 +142,9 @@ BEGIN
 	(
 		[QuoteId] INT UNIQUE,
 		[CompanyQuoteNum] INT UNIQUE,
-        [MACDShort] DECIMAL(10, 2),
-		[MACDLong] DECIMAL(10, 2),
-		[MACD] DECIMAL(10, 2)
+        [MACDShort] DECIMAL(9, 4),
+		[MACDLong] DECIMAL(9, 4),
+		[MACD] DECIMAL(9, 4)
 	)
 
 	INSERT INTO @macdValues
@@ -164,12 +164,12 @@ BEGIN
 	DECLARE @macdSignalLineValues TABLE
 	(
 		[QuoteId] INT UNIQUE,
-        [MACDSignal] DECIMAL(10, 2)
+        [MACDSignal] DECIMAL(9, 4)
 	)
 
-	DECLARE @previousMACDCombined DECIMAL(10, 2),
-			@currentMACDCombined DECIMAL(10, 2),
-			@currentMACD DECIMAL(10, 2)
+	DECLARE @previousMACDCombined DECIMAL(9, 4),
+			@currentMACDCombined DECIMAL(9, 4),
+			@currentMACD DECIMAL(9, 4)
 
 	SET @currentRowNum = @minRowNum
 	SET @smoothingConst = (2.0 / (1.0 + @macdSignalPeriod))
@@ -195,6 +195,7 @@ BEGIN
 	/*********************************************************************************************
 		Return MACD results
 	*********************************************************************************************/
+	INSERT INTO @macdReturnValues
 	SELECT quotes.[QuoteId],
 		   quotes.[CompanyId],
 		   quotes.[Date],
@@ -204,5 +205,7 @@ BEGIN
 	FROM @companyQuotes quotes INNER JOIN @macdValues macdValues ON quotes.QuoteId = macdValues.QuoteId
 							   INNER JOIN @macdSignalLineValues macdSignal ON quotes.QuoteId = macdSignal.QuoteId
 	WHERE quotes.[Date] >= @startDate AND quotes.[Date] <= @endDate
+
+	RETURN;
 END
 GO

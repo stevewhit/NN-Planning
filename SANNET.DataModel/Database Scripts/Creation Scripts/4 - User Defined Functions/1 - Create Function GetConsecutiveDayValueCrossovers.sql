@@ -36,7 +36,7 @@ RETURN
 			CASE WHEN valuesFirstOuter.Value < valuesSecondOuter.Value
 						THEN 0
 						ELSE (SELECT COUNT(*)
-							  FROM @dateValuesFirst valuesFirstInner --INNER JOIN @dateValuesSecond valuesSecondInner ON valuesFirstInner.Date = valuesSecondInner.Date
+							  FROM @dateValuesFirst valuesFirstInner
 							  WHERE valuesFirstInner.[Date] < valuesFirstOuter.[Date] AND 
 									valuesFirstInner.[Date] >= ISNULL((SELECT MAX(valuesFirstInnerInner.[Date]) 
 																  FROM @dateValuesFirst valuesFirstInnerInner INNER JOIN @dateValuesSecond valuesSecondInnerInner ON valuesFirstInnerInner.Date = valuesSecondInnerInner.Date
@@ -46,7 +46,7 @@ RETURN
 			CASE WHEN valuesFirstOuter.Value > valuesSecondOuter.Value
 						THEN 0
 						ELSE (SELECT COUNT(*)
-							  FROM @dateValuesFirst valuesFirstInner --INNER JOIN @dateValuesSecond valuesSecondInner ON valuesFirstInner.Date = valuesSecondInner.Date
+							  FROM @dateValuesFirst valuesFirstInner
 							  WHERE valuesFirstInner.[Date] < valuesFirstOuter.[Date] AND 
 									valuesFirstInner.[Date] >= ISNULL((SELECT MAX(valuesFirstInnerInner.[Date]) 
 																  FROM @dateValuesFirst valuesFirstInnerInner INNER JOIN @dateValuesSecond valuesSecondInnerInner ON valuesFirstInnerInner.Date = valuesSecondInnerInner.Date

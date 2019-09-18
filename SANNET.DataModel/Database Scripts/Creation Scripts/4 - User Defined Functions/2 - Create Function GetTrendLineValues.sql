@@ -25,7 +25,7 @@ CREATE FUNCTION [dbo].[GetTrendLineValues]
 RETURNS @trendValues TABLE
 (
 	[Id] INT UNIQUE,
-	[YTrend] DECIMAL(10, 4)
+	[YTrend] DECIMAL(9, 3)
 )
 AS
 BEGIN
@@ -36,8 +36,8 @@ BEGIN
 	DECLARE @numberedValues TABLE
 	(
 		[Id] INT UNIQUE,
-		[X] INT,
-		[Y] DECIMAL(10, 4)
+		[X] INT UNIQUE,
+		[Y] DECIMAL(9, 3)
 	)
 
 	INSERT INTO @numberedValues

@@ -2,8 +2,8 @@ IF NOT EXISTS (SELECT 1 from sys.types WHERE is_table_type = 1 AND name = 'DateV
 BEGIN
 	PRINT 'Creating Type "DateValues"...'
 	CREATE TYPE [dbo].[DateValues] AS TABLE(
-		[Id] [int] NOT NULL,
-		[Date] [date] NULL,
+		[Id] [int] UNIQUE NOT NULL,
+		[Date] [date] UNIQUE NULL,
 		[Value] [decimal](12, 2) NULL
 	)
 END

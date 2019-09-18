@@ -3,14 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetFutureFiveDayPerformance')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetFutureFiveDayPerformanceValues')
 BEGIN
-	PRINT 'Dropping "GetFutureFiveDayPerformance" stored procedure...'
-	DROP PROCEDURE GetFutureFiveDayPerformance
+	PRINT 'Dropping "GetFutureFiveDayPerformanceValues" function...'
+	DROP FUNCTION GetFutureFiveDayPerformanceValues
 END
 GO
 
-PRINT 'Creating "GetFutureFiveDayPerformance" stored procedure...'
+PRINT 'Creating "GetFutureFiveDayPerformanceValues" function...'
 GO
 
 -- =============================================
@@ -20,26 +20,34 @@ GO
 --				The returned items will indicate whether the stock rose to the @riseMultiplierTrigger  
 --				before falling to the @fallMultiplierTrigger and vice versa for each day.
 -- =============================================
-CREATE PROCEDURE [dbo].[GetFutureFiveDayPerformance]
+CREATE FUNCTION [dbo].[GetFutureFiveDayPerformanceValues] 
+(
 	@companyId int,
 	@startDate date,
 	@endDate date,
 	@riseMultiplierTrigger decimal(7, 3) = 1.01,
 	@fallMultiplierTrigger decimal(7, 3) = .99
+)
+RETURNS @fiveDayPerformanceValues TABLE
+(
+	[QuoteId] INT UNIQUE,
+	[CompanyId] INT,
+	[Date] DATE UNIQUE,
+	[TriggeredRiseFirst] BIT,
+	[TriggeredFallFirst] BIT
+)
 AS
 BEGIN
-	-- SET NOCOUNT ON added to prevent extra result sets from interfering with SELECT statements.
-	SET NOCOUNT ON;
 
 	/*********************************************************************************************
 		Table to hold the performance outputs starting from the @startDate 
 	*********************************************************************************************/
 	DECLARE @fiveDayPerformance TABLE
 	(
-		[QuoteId] INT,
+		[QuoteId] INT UNIQUE,
 		[CompanyId] INT,
-		[Date] DATE,
-		[Close] DECIMAL(12, 2),
+		[Date] DATE UNIQUE,
+		[Close] DECIMAL(9, 3),
 		[FiveDayOutcomeType] INT
 	)
 
@@ -60,23 +68,23 @@ BEGIN
 													    ELSE CASE WHEN LEAD([Close], 5) OVER (ORDER BY [Date]) < [Close] * @fallMultiplierTrigger THEN -1
 															 ELSE 0
 														END END END END END END END END END END as [FiveDayOutcomeType]
-	FROM StockMarketData.dbo.Quotes
+	FROM GetCompanyQuotes(@companyId)
 	WHERE [CompanyId] = @companyId AND [Date] >= @startDate
 	ORDER BY [Date]
 	
 	/*********************************************************************************************
 		Return dataset
 	*********************************************************************************************/
+	INSERT INTO @fiveDayPerformanceValues
 	SELECT [QuoteId],
 		   [CompanyId],
 		   [Date],
-		   --[Close],
 		   CASE WHEN [FiveDayOutcomeType] = 1 THEN 1 ELSE 0 END as [TriggeredRiseFirst],
 		   CASE WHEN [FiveDayOutcomeType] = -1 THEN 1 ELSE 0 END as [TriggeredFallFirst]
 	FROM @fiveDayPerformance
 	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate
 	ORDER BY [Date]
+
+	RETURN;
 END
 GO
-
-

@@ -3,14 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetRelativeStrengthIndex')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetRelativeStrengthIndexValues')
 BEGIN
-	PRINT 'Dropping "GetRelativeStrengthIndex" stored procedure...'
-	DROP PROCEDURE GetRelativeStrengthIndex
+	PRINT 'Dropping "GetRelativeStrengthIndexValues" function...'
+	DROP FUNCTION GetRelativeStrengthIndexValues
 END
 GO
 
-PRINT 'Creating "GetRelativeStrengthIndex" stored procedure...'
+PRINT 'Creating "GetRelativeStrengthIndexValues" function...'
 GO
 
 -- =============================================
@@ -18,14 +18,22 @@ GO
 -- Create date: 08-19-2019
 -- Description:	Returns the Relative Strength Index (RSI) calculations for a given company.
 -- =============================================
-CREATE PROCEDURE [dbo].[GetRelativeStrengthIndex] 
+CREATE FUNCTION [dbo].[GetRelativeStrengthIndexValues] 
+(
 	@companyId int,
 	@startDate date,
 	@endDate date,
 	@rsiPeriod int
+)
+RETURNS @rsiValues TABLE
+(
+	[QuoteId] INT UNIQUE, 
+	[CompanyId] INT,  
+	[Date] DATE UNIQUE, 
+	[RSI] DECIMAL(9, 4)
+)
 AS
 BEGIN
-	SET NOCOUNT ON;
 
 	-- Verified 09-03-2019 --
 
@@ -34,9 +42,9 @@ BEGIN
 	*********************************************************************************************/
 	DECLARE @changeCalcs TABLE
 	(
-		[QuoteId] INT, 
+		[QuoteId] INT UNIQUE, 
 		[CompanyId] INT, 
-		[Date] DATE, 
+		[Date] DATE UNIQUE, 
 		[Close] DECIMAL(12, 4), 
 		[Change] DECIMAL(12, 4)
 	);
@@ -48,8 +56,7 @@ BEGIN
 	       [Date], 
 	       [Close], 
 	       [Close] - LAG([Close], 1) OVER (ORDER BY [Id]) as [Change]
-	FROM StockMarketData.dbo.Quotes
-	WHERE [CompanyId] = @companyId
+	FROM GetCompanyQuotes(@companyId)
 	ORDER BY [Date]
 
 	/*********************************************************************************************
@@ -57,9 +64,9 @@ BEGIN
 	*********************************************************************************************/
 	DECLARE @currentGainLossCalculations TABLE
 	(
-		[RowCount] INT,
-		[QuoteId] INT, 
-		[Date] DATE,
+		[RowCount] INT UNIQUE,
+		[QuoteId] INT UNIQUE, 
+		[Date] DATE UNIQUE,
 		[CurrentGain] DECIMAL(12, 4), 
 		[CurrentLoss] DECIMAL(12, 4) 
 	);
@@ -77,13 +84,13 @@ BEGIN
 
 	DECLARE @avgGainLossCalculations TABLE
 	(
-		[RowCount] INT,
-		[QuoteId] INT, 
-		[Date] DATE,
-		[CurrentGain] DECIMAL(12, 4),
-		[AverageGain] DECIMAL(12, 4), 
-		[CurrentLoss] DECIMAL(12, 4),
-		[AverageLoss] DECIMAL(12, 4)
+		[RowCount] INT UNIQUE,
+		[QuoteId] INT UNIQUE, 
+		[Date] DATE UNIQUE,
+		[CurrentGain] DECIMAL(9, 4),
+		[AverageGain] DECIMAL(9, 4), 
+		[CurrentLoss] DECIMAL(9, 4),
+		[AverageLoss] DECIMAL(9, 4)
 	);
 	
 	INSERT INTO @avgGainLossCalculations
@@ -120,10 +127,10 @@ BEGIN
 	-- Declare local variables for RS and RSI computation --
 	DECLARE @row_number INT = @rsiPeriod + 2,
 			@total_rows INT = (SELECT COUNT(quoteId) FROM (SELECT [QuoteId] FROM @avgGainLossCalculations) InnerCount),
-			@avg_gain_prior DECIMAL(12, 4),
-			@avg_loss_prior DECIMAL(12, 4),
-			@current_gain DECIMAL(12, 4),
-			@current_loss DECIMAL(12, 4)
+			@avg_gain_prior DECIMAL(9, 4),
+			@avg_loss_prior DECIMAL(9, 4),
+			@current_gain DECIMAL(9, 4),
+			@current_loss DECIMAL(9, 4)
 
 	-- Update each row's average gain/loss values for RowCount > @rsiPeriod
 	WHILE @row_number > @rsiPeriod AND @row_number <= @total_rows
@@ -144,23 +151,18 @@ BEGIN
 	/*********************************************************************************************
 		Table to hold the RSI values over the @rsiPeriod for each quote. 
 	*********************************************************************************************/
+	INSERT INTO @rsiValues
 	SELECT changeCalcs.[QuoteId], 
 	       changeCalcs.[CompanyId], 
 	       changeCalcs.[Date], 
-	    --   changeCalcs.[Close], 
-	    --   changeCalcs.[Change], 
-		   --avgGainLossCalcs.[CurrentGain],
-		   --avgGainLossCalcs.[CurrentLoss],
-	    --   avgGainLossCalcs.[AverageGain], 
-	    --   avgGainLossCalcs.[AverageLoss], 
 		   CASE WHEN [AverageLoss] <= 0
 	       	    THEN 100.00
 				ELSE 100.00 - (100.00 / (1.00 + ([AverageGain] / [AverageLoss])))
 				END as [RSI]
 	FROM @changeCalcs changeCalcs 
 			INNER JOIN @avgGainLossCalculations avgGainLossCalcs on changeCalcs.QuoteId = avgGainLossCalcs.QuoteId
-	WHERE CompanyId = @companyId AND changeCalcs.[Date] >= @startDate AND changeCalcs.[Date] <= @endDate
+	WHERE changeCalcs.[Date] >= @startDate AND changeCalcs.[Date] <= @endDate
+
+	RETURN;
 END
 GO
-
-

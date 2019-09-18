@@ -3,14 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' and name = 'GetStochasticIndicator')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetStochasticIndicatorValues')
 BEGIN
-	PRINT 'Dropping "GetStochasticIndicator" stored procedure...'
-	DROP PROCEDURE GetStochasticIndicator
+	PRINT 'Dropping "GetStochasticIndicatorValues" function...'
+	DROP FUNCTION GetStochasticIndicatorValues
 END
 GO
 
-PRINT 'Creating "GetStochasticIndicator" stored procedure...'
+PRINT 'Creating "GetStochasticIndicatorValues" function...'
 GO
 
 -- ================================================================================================
@@ -26,15 +26,24 @@ GO
 --		Lowest Low = lowest low of the specified time period
 --		Highest High = highest high of the specified time period
 -- ================================================================================================
-CREATE PROCEDURE [dbo].[GetStochasticIndicator] 
+CREATE FUNCTION [dbo].[GetStochasticIndicatorValues] 
+(
 	@companyId int,
 	@startDate date,
 	@endDate date,
 	@stochasticPeriod int,
 	@movingAveragePeriod int
+)
+RETURNS @stochasticReturnValues TABLE
+(
+	[QuoteId] INT UNIQUE, 
+	[CompanyId] INT,  
+	[Date] DATE UNIQUE, 
+	[StochasticK] DECIMAL(9, 4),
+	[StochasticD] DECIMAL(9, 4)
+)
 AS
 BEGIN
-	SET NOCOUNT ON;
 
 	-- Verified 09-11-2019 --
 
@@ -44,33 +53,16 @@ BEGIN
 	DECLARE @companyQuotes TABLE
 	(
 		[QuoteId] INT UNIQUE,
-		[CompanyQuoteNum] INT,
+		[CompanyQuoteNum] INT UNIQUE,
 		[CompanyId] INT,
-        [Date] DATE,
-        [Open] DECIMAL(10, 2),
-        [High] DECIMAL(10, 2),
-        [Low] DECIMAL(10, 2),
-        [Close] DECIMAL(10, 2),
-        [Volume] BIGINT
+        [Date] DATE UNIQUE,
+        [High] DECIMAL(9, 3),
+        [Low] DECIMAL(9, 3),
+        [Close] DECIMAL(9, 3)
 	)
 
-	INSERT INTO @companyQuotes
-	SELECT [Id] as [QuoteId],
-	   (SELECT [RowNum] 
-	    FROM (SELECT Id, ROW_NUMBER() OVER(ORDER BY [Date]) as [RowNum] 
-		      FROM [StockMarketData].dbo.Quotes quotes 
-			  WHERE quotes.CompanyId = quotesOuter.CompanyId) rowNums 
-	    WHERE rowNums.Id = quotesOuter.Id) as [CompanyQuoteNum],
-       [CompanyId],
-       [Date],
-       [Open],
-       [High],
-       [Low],
-       [Close],
-       [Volume]
-	FROM [StockMarketData].[dbo].[Quotes] quotesOuter
-	WHERE [CompanyId] = @companyId
-	ORDER BY [Date]
+	INSERT INTO @companyQuotes 
+	SELECT [Id], [CompanyQuoteNum], [CompanyId], [Date], [High], [Low], [Close] from GetCompanyQuotes(@companyId)
 
 	/*********************************************************************************************
 		Table to hold the highest/lowest values for the period for each quote.
@@ -78,8 +70,8 @@ BEGIN
 	DECLARE @periodHighLows TABLE
 	(
 		[QuoteId] INT UNIQUE,
-        [PeriodHigh] DECIMAL(10, 2),
-        [PeriodLow] DECIMAL(10, 2)
+        [PeriodHigh] DECIMAL(9, 3),
+        [PeriodLow] DECIMAL(9, 3)
 	)
 
 	INSERT INTO @periodHighLows
@@ -109,8 +101,8 @@ BEGIN
 	DECLARE @kValues TABLE
 	(
 		[QuoteId] INT UNIQUE,
-		[CompanyQuoteNum] INT,
-       	[StochasticK] DECIMAL(10, 2)
+		[CompanyQuoteNum] INT UNIQUE,
+       	[StochasticK] DECIMAL(9, 4)
 	)			
 	
 	INSERT INTO @kValues					 
@@ -128,6 +120,7 @@ BEGIN
 		Lowest Low = lowest low of the specified time period
 		Highest High = highest high of the specified time period
 	*********************************************************************************************/
+	INSERT INTO @stochasticReturnValues
 	SELECT quotes.[QuoteId],
 		   quotes.[CompanyId],
 		   quotes.[Date],
@@ -138,5 +131,7 @@ BEGIN
 				END  as [StochasticD]
 	FROM @companyQuotes quotes INNER JOIN @kValues kOuter ON quotes.QuoteId = kOuter.QuoteId
 	WHERE quotes.[Date] >= @startDate AND quotes.[Date] <= @endDate
+
+	RETURN;
 END
 GO
