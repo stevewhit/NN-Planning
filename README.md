@@ -17,6 +17,65 @@ In the current state, the application generates and analyzes predictions based o
 - [ ] Try different NetworkConfigurations (hidden layers, hidden layer neurons) to help speed up training without sacrificing correctness.
 - [ ] Try different training date-ranges.
 
+
+``` SQL
+DECLARE @closeValues IdValues;
+
+INSERT INTO @closeValues
+SELECT [Id], [Close]
+FROM StockMarketData.dbo.Quotes
+WHERE CompanyId = 3
+
+DECLARE @slope DECIMAL(10, 4) = SANNET.dbo.GetTrendLineSlope(@closeValues)
+SELECT @slope
+
+SELECT 
+	(SANNET.dbo.GetTrendLineSlope((SELECT [Id], [Close] FROM StockMarketData.dbo.Quotes quotesInner WHERE quotesInner.[Id] <= quotesOuter.[Id]))) as Slope
+FROM StockMarketData.dbo.Quotes quotesOuter
+```
+```
+/*
+	(@quoteId from stored procedure argument)
+
+	DECLARE @trendLineSlope = slope of [Close] over past 4-6 weeks? 2-3 months??
+
+	IF @trendLineSlope is positive (for the quote that was passed in)
+	BEGIN
+		
+		-- Create and populate all indicator tables here (RSI, CCI, Stoch, SMA.. etc)
+
+		-- Only return training data where the trendlineslope is positive
+		FOREACH companyQuote
+		BEGIN
+			SET @trendLineSlope = slope of [Close] over past 4-6 weeks? 2-3 months??
+
+			IF @trendLineSlope is positive 
+			BEGIN
+				-- Return dataset
+			END
+		END
+	END
+	ELSE
+		Return empty dataset.
+
+
+	Days off: 15days ==> 2080 hours => 120 hours missed (accounted for)
+	Hours / yr = 2080 - 120 = 1960
+
+	Salary: 90 => 45.92/hr
+	401k: 6% => 3.06/hr
+	Total: 48.98
+
+	Salary: 105 => 53.57/hr
+	401k: 6% => 3.21/hr
+	Total: 56.78
+	
+	Salary: 110 => 56.12
+	401k: 6% => 3.37/hr
+	Total: 59.49
+*/
+```
+
 ## Indicators
 ### Stochastic Indicator
 The stochastic indicator is a momentum indicator developed by George C. Lane in the 1950s, which shows the position of the most recent closing price relative to the previous high-low range. The indicator measures momentum by comparing the closing price with the previous trading range over a specific period of time.
