@@ -30,13 +30,19 @@ BEGIN
 			@macdSignalPeriod INT = 9,
 			@stochasticPeriod INT = 14,
 			@stochasticSMAPeriod INT = 3,
+			@rsiPeriod INT = 14,
+			@cciPeriod INT = 14,
+			@smaPeriodShort INT = 14,
+			@smaPeriodLong INT = 50,
+			@emaPeriod INT = 14,
 			@performanceRiseMultiplier DECIMAL(8, 4) = 1.04,
 			@performanceFallMultiplier DECIMAL(8, 4) = .98
 
 	DECLARE	@quotesToSkipAtStart INT = (SELECT MAX(v) FROM (VALUES (@macdPeriodLong + @macdSignalPeriod - 1), (@stochasticPeriod + @stochasticSMAPeriod - 1)) as VALUE(v)),
 			@quotesToSkipAtEnd INT = 5,
-			@startDate DATE,
-			@endDate DATE
+			@quoteDate DATE,
+			@returnDatasetStartDate DATE,
+			@returnDatasetEndDate DATE
 
 	/*********************************************
 		Table to hold numbered quotes.
@@ -55,29 +61,9 @@ BEGIN
 	/****************************************************************
 		Update start and end dates for the indicator calculations
 	*****************************************************************/
-	SET @startDate = (SELECT MIN([Date]) FROM @companyQuotes WHERE [QuoteId] <= @quoteId AND [CompanyQuoteNum] >= @quotesToSkipAtStart)
-	SET @endDate = (SELECT MAX([Date]) FROM @companyQuotes WHERE [QuoteId] <= @quoteId AND [CompanyQuoteNum] <= (SELECT MAX([CompanyQuoteNum]) FROM @companyQuotes) - @quotesToSkipAtEnd)
-
-	--/********************************
-	--	MACD table
-	--*********************************/
-	--DECLARE @macdValues TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [MACD] DECIMAL(12, 2), [MACDSignal] DECIMAL(12, 2), [MACDHistogram] DECIMAL(12, 2));
-	--INSERT INTO @macdValues 
-	--EXECUTE GetMovingAverageConvergenceDivergence @companyId, @startDate, @endDate, @macdPeriodShort, @macdPeriodLong, @macdSignalPeriod
-	
-	--/***********************************
-	--	Stochastic table
-	--************************************/
-	--DECLARE @stochasticValues TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [StochasticK] DECIMAL(12, 2), [StochasticD] DECIMAL(12, 2));
-	--INSERT INTO @stochasticValues 
-	--EXECUTE GetStochasticIndicator @companyId, @startDate, @endDate, @stochasticPeriod, @stochasticSMAPeriod 
-
-	--/**********************************
-	--	Future Five Day Performance
-	--***********************************/
-	--DECLARE @futureFiveDayPerformance TABLE ([QuoteId] INT, [CompanyId] INT, [Date] DATE, [TriggeredRiseFirst] BIT, [TriggeredFallFirst] BIT);
-	--INSERT INTO @futureFiveDayPerformance 
-	--EXECUTE GetFutureFiveDayPerformance @companyId, @startDate, @endDate, @performanceRiseMultiplier, @performanceFallMultiplier
+	SET @quoteDate = (SELECT [Date] FROM @companyQuotes WHERE [QuoteId] = @quoteId)
+	SET @returnDatasetStartDate = (SELECT MIN([Date]) FROM @companyQuotes WHERE [Date] <= @quoteDate AND [CompanyQuoteNum] >= @quotesToSkipAtStart)
+	SET @returnDatasetEndDate = (SELECT MAX([Date]) FROM @companyQuotes WHERE [Date] <= @quoteDate AND [CompanyQuoteNum] <= (SELECT MAX([CompanyQuoteNum]) FROM @companyQuotes) - @quotesToSkipAtEnd)
 
 	/***************************
 		All combined indicators
@@ -89,6 +75,11 @@ BEGIN
 	[MACDHistogram] DECIMAL(9, 4), 
 	[StochasticK] DECIMAL(9, 4), 
 	[StochasticD] DECIMAL(9, 4), 
+	[RSI] DECIMAL(9, 4),
+	[CCI] DECIMAL(9, 3),
+	[SMAShort] DECIMAL(9, 4),
+	[SMALong] DECIMAL(9, 4),
+	[EMA] DECIMAL(9, 4),
 	[TriggeredRiseFirst] BIT, 
 	[TriggeredFallFirst] BIT);
 
@@ -99,13 +90,46 @@ BEGIN
 			[MACDHistogram],
 			[StochasticK],
 			[StochasticD],
+			[RSI],
+			[CCI],
+			[SMAShort],
+			[SMALong],
+			[EMA],
 			[TriggeredRiseFirst],
 			[TriggeredFallFirst]
-	FROM (SELECT [QuoteId], [MACD], [MACDSignal], [MACDHistogram] FROM GetMovingAverageConvergenceDivergenceValues(@companyId, @startDate, @endDate, @macdPeriodShort, @macdPeriodLong, @macdSignalPeriod)) macdValues
-			INNER JOIN (SELECT [QuoteId], [StochasticK], [StochasticD] FROM GetStochasticIndicatorValues(@companyId, @startDate, @endDate, @stochasticPeriod, @stochasticSMAPeriod)) stochasticValues ON macdValues.[QuoteId] = stochasticValues.[QuoteId]
-			INNER JOIN (SELECT [QuoteId], [TriggeredRiseFirst], [TriggeredFallFirst] FROM GetFutureFiveDayPerformanceValues(@companyId, @startDate, @endDate, @performanceRiseMultiplier, @performanceFallMultiplier)) fiveDayPerformance ON macdValues.[QuoteId] = fiveDayPerformance.[QuoteId]
+	FROM (SELECT [QuoteId], [MACD], [MACDSignal], [MACDHistogram] FROM GetMovingAverageConvergenceDivergenceValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @macdPeriodShort, @macdPeriodLong, @macdSignalPeriod)) macdValues
+			INNER JOIN (SELECT [QuoteId], [StochasticK], [StochasticD] FROM GetStochasticIndicatorValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @stochasticPeriod, @stochasticSMAPeriod)) stochasticValues ON macdValues.[QuoteId] = stochasticValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [RSI] FROM GetRelativeStrengthIndexValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @rsiPeriod)) rsiValues ON macdValues.[QuoteId] = rsiValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [CCI] FROM GetCommodityChannelIndexValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @cciPeriod)) cciValues ON macdValues.[QuoteId] = cciValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [SMA] as [SMAShort] FROM GetSimpleMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @smaPeriodShort)) smaShortValues ON macdValues.[QuoteId] = smaShortValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [SMA] as [SMALong] FROM GetSimpleMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @smaPeriodLong)) smaLongValues ON macdValues.[QuoteId] = smaLongValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [EMA] FROM GetExponentialMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @emaPeriod)) emaValues ON macdValues.[QuoteId] = emaValues.[QuoteId]
+			INNER JOIN (SELECT [QuoteId], [TriggeredRiseFirst], [TriggeredFallFirst] FROM GetFutureFiveDayPerformanceValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @performanceRiseMultiplier, @performanceFallMultiplier)) fiveDayPerformance ON macdValues.[QuoteId] = fiveDayPerformance.[QuoteId]
 
 	SELECT * FROM @combinedIndicatorValues
+
+
+	/****
+		Next Steps
+			- Filter @combinedIndicatorValues to only return dataset entries where the overall '[Close]' trendslope over the past 'x' dates, is positive (or greater than 1-2)
+
+				- this requires that the trend-slope be calculated and added to each dataset entry.. hmmm maybe a while loop??
+	*****/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/***********************************
 		Normalized indicator values
