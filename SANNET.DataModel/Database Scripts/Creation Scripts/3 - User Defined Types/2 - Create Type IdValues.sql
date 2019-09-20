@@ -3,7 +3,7 @@ BEGIN
 	PRINT 'Creating Type "IdValues"...'
 	CREATE TYPE [dbo].[IdValues] AS TABLE(
 		[Id] [int] UNIQUE NOT NULL,
-		[Value] [decimal](12, 2) NULL
+		[Value] [decimal](9, 3) NULL
 	)
 END
 ELSE

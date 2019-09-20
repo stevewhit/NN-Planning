@@ -22,7 +22,7 @@ CREATE FUNCTION [dbo].[GetTrendLineSlope]
 (
 	@idValues IdValues READONLY
 )
-RETURNS DECIMAL(12, 4)
+RETURNS DECIMAL(9, 4)
 AS
 BEGIN
 
@@ -33,7 +33,7 @@ BEGIN
 	(
 		[Id] INT UNIQUE,
 		[X] INT,
-		[Y] DECIMAL(10, 4)
+		[Y] DECIMAL(9, 4)
 	)
 
 	INSERT INTO @numberedValues
@@ -50,7 +50,7 @@ BEGIN
 	DECLARE @b DECIMAL(38, 3) = (SELECT SUM([X]) * SUM([Y]) FROM (SELECT [X], [Y] FROM @numberedValues) as vals)
 	DECLARE @c DECIMAL(38, 3) = @valuesCount * (SELECT SUM(CONVERT(BIGINT, xSquared)) FROM (SELECT [X] * [X] as [xSquared] FROM @numberedValues) as vals)
 	DECLARE @d DECIMAL(38, 3) = (SELECT SUM(CONVERT(BIGINT, [X])) * SUM(CONVERT(BIGINT, [X])) FROM (SELECT [X] FROM @numberedValues) as vals)
-	DECLARE @trendLineSlope DECIMAL(12, 4) = (@a - @b) / (@c - @d)
+	DECLARE @trendLineSlope DECIMAL(9, 4) = (@a - @b) / (@c - @d)
 	
 	RETURN @trendLineSlope;
 END

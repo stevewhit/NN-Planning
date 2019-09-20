@@ -4,7 +4,7 @@ BEGIN
 	CREATE TYPE [dbo].[DateValues] AS TABLE(
 		[Id] [int] UNIQUE NOT NULL,
 		[Date] [date] UNIQUE NULL,
-		[Value] [decimal](12, 2) NULL
+		[Value] [decimal](9, 3) NULL
 	)
 END
 ELSE
