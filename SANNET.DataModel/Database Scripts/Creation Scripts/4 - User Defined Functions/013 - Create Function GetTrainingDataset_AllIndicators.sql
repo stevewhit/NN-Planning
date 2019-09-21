@@ -3,28 +3,46 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.procedures WHERE name = 'GetTrainingDataset_MACDStochastic')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetDataset_AllIndicators')
 BEGIN
-	PRINT 'Dropping "GetTrainingDataset_MACDStochastic" stored procedure...'
-	DROP PROCEDURE GetTrainingDataset_MACDStochastic
+	PRINT 'Dropping "GetDataset_AllIndicators" function...'
+	DROP FUNCTION GetDataset_AllIndicators
 END
 GO
 
-PRINT 'Creating "GetTrainingDataset_MACDStochastic" stored procedure...'
+PRINT 'Creating "GetDataset_AllIndicators" function...'
 GO
 
--- =============================================
+-- ==========================================================================================================
 -- Author:		Steve Whitmire Jr.
--- Create date: 09-15-2019
--- Description:	Returns the training/testing dataset using the MACD & Stochastic indicators.
--- =============================================
-CREATE PROCEDURE [dbo].[GetTrainingDataset_MACDStochastic] 
+-- Create date: 09-21-2019
+-- Description:	Returns the training & testing dataset for the @quoteId, containing all technical indicator signals
+-- ==========================================================================================================
+CREATE FUNCTION [dbo].[GetDataset_AllIndicators] 
+(
 	@companyId int,
 	@quoteId int
+)
+RETURNS @datasetValues TABLE
+(
+	[QuoteId] INT UNIQUE,
+	[I_IsMACDAboveZeroLine] BIT, 
+	[I_IsStochasticOverBought] BIT, 
+	[I_IsStochasticOverSold] BIT, 
+	[I_IsStochasticNeitherOverBoughtOrOverSold] BIT, 
+	[I_IsRSIOverBought] BIT,
+	[I_IsRSIOverSold] BIT,
+	[I_IsRSINeitherOverBoughtOrOverSold] BIT, 
+	[I_IsCCIOverBought] BIT,
+	[I_IsCCIOverSold] BIT,
+	[I_IsCCINeitherOverBoughtOrOverSold] BIT, 
+	[I_IsSMAShortGreaterThanLong] BIT,
+	[I_IsEMAShortGreaterThanLong] BIT,
+	[O_TriggeredRiseFirst] BIT, 
+	[O_TriggeredFallFirst] BIT
+)
 AS
 BEGIN
-	SET NOCOUNT ON;
-
 	DECLARE @macdPeriodShort INT = 12,
 			@macdPeriodLong INT = 26,
 			@macdSignalPeriod INT = 9,
@@ -85,28 +103,31 @@ BEGIN
 	SELECT [QuoteId], [TrendSlope] as [CloseTrendSlope]
 	FROM GetCloseTrendLineSlopeValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @closeTrendSlopePeriod)
 	
-	-- Only return a populated dataset if the current quote closeTrendSlope is > @minCloseTrendSlope --
-	IF (SELECT [CloseTrendSlope] FROM @closeTrendSlopes WHERE [QuoteId] = @quoteId) > @minCloseTrendSlope
-	BEGIN
-		/***************************
-			All combined indicators
-		****************************/
-		DECLARE @combinedIndicatorValues TABLE(
-		[QuoteId] INT UNIQUE,
-		[MACD] DECIMAL(9, 4), 
-		[MACDSignal] DECIMAL(9, 4), 
-		[MACDHistogram] DECIMAL(9, 4), 
-		[StochasticK] DECIMAL(9, 4), 
-		[StochasticD] DECIMAL(9, 4), 
-		[RSI] DECIMAL(9, 4),
-		[CCI] DECIMAL(9, 3),
-		[SMAShort] DECIMAL(9, 4),
-		[SMALong] DECIMAL(9, 4),
-		[EMA] DECIMAL(9, 4),
-		[CloseTrendSlope] DECIMAL(9, 4),
-		[TriggeredRiseFirst] BIT, 
-		[TriggeredFallFirst] BIT);
+	/****************************************************************************************************
+		All combined indicators
+		---
+		Note: This table is only populated when the @quoteId close trend slope is > @minCloseTrendSlope
+	*****************************************************************************************************/
+	DECLARE @combinedIndicatorValues TABLE(
+	[QuoteId] INT UNIQUE,
+	[MACD] DECIMAL(9, 4), 
+	[MACDSignal] DECIMAL(9, 4), 
+	[MACDHistogram] DECIMAL(9, 4), 
+	[StochasticK] DECIMAL(9, 4), 
+	[StochasticD] DECIMAL(9, 4), 
+	[RSI] DECIMAL(9, 4),
+	[CCI] DECIMAL(9, 3),
+	[SMAShort] DECIMAL(9, 4),
+	[SMALong] DECIMAL(9, 4),
+	[EMAShort] DECIMAL(9, 4),
+	[EMALong] DECIMAL(9, 4),
+	[CloseTrendSlope] DECIMAL(9, 4),
+	[TriggeredRiseFirst] BIT, 
+	[TriggeredFallFirst] BIT);
 
+	-- Only return a populated dataset if the current quote closeTrendSlope is > @minCloseTrendSlope --
+	IF (SELECT [CloseTrendSlope] FROM @closeTrendSlopes WHERE [QuoteId] = @quoteId) >= @minCloseTrendSlope
+	BEGIN
 		INSERT INTO @combinedIndicatorValues
 		SELECT  macdValues.[QuoteId],
 				[MACD],
@@ -118,7 +139,8 @@ BEGIN
 				[CCI],
 				[SMAShort],
 				[SMALong],
-				[EMA],
+				[EMAShort],
+				[EMALong],
 				[CloseTrendSlope],
 				[TriggeredRiseFirst],
 				[TriggeredFallFirst]
@@ -128,106 +150,50 @@ BEGIN
 				INNER JOIN (SELECT [QuoteId], [CCI] FROM GetCommodityChannelIndexValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @cciPeriod)) cciValues ON macdValues.[QuoteId] = cciValues.[QuoteId]
 				INNER JOIN (SELECT [QuoteId], [SMA] as [SMAShort] FROM GetSimpleMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @smaPeriodShort)) smaShortValues ON macdValues.[QuoteId] = smaShortValues.[QuoteId]
 				INNER JOIN (SELECT [QuoteId], [SMA] as [SMALong] FROM GetSimpleMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @smaPeriodLong)) smaLongValues ON macdValues.[QuoteId] = smaLongValues.[QuoteId]
-				INNER JOIN (SELECT [QuoteId], [EMA] FROM GetExponentialMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @emaPeriod)) emaValues ON macdValues.[QuoteId] = emaValues.[QuoteId]
+				INNER JOIN (SELECT [QuoteId], [EMA] as [EMAShort] FROM GetExponentialMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @emaPeriod)) emaShortValues ON macdValues.[QuoteId] = emaShortValues.[QuoteId]
+				INNER JOIN (SELECT [QuoteId], [EMA] as [EMALong] FROM GetExponentialMovingAverageValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @emaPeriod)) emaLongValues ON macdValues.[QuoteId] = emaLongValues.[QuoteId]
 				INNER JOIN @closeTrendSlopes closeTrendSlopeValues ON macdValues.[QuoteId] = closeTrendSlopeValues.[QuoteId]
 				INNER JOIN (SELECT [QuoteId], [TriggeredRiseFirst], [TriggeredFallFirst] FROM GetFutureFiveDayPerformanceValues(@companyId, @returnDatasetStartDate, @returnDatasetEndDate, @performanceRiseMultiplier, @performanceFallMultiplier)) fiveDayPerformance ON macdValues.[QuoteId] = fiveDayPerformance.[QuoteId]
-
-		SELECT * FROM @combinedIndicatorValues
+		WHERE [CloseTrendSlope] >= @minCloseTrendSlope
 	END 
-	ELSE
-	BEGIN
-		SELECT '(TODO: Fix this) ===> CloseTrendSlope is not valid for @quoteId'
-	END
-
-
-
-
-
-
-
-
-
-	/****
-		Next Steps
-			- Filter @combinedIndicatorValues to only return dataset entries where the overall '[Close]' trendslope over the past 'x' dates, is positive (or greater than 1-2)
-
-				- this requires that the trend-slope be calculated and added to each dataset entry.. hmmm maybe a while loop??
-	*****/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	
 	/***********************************
-		Normalized indicator values
+		Return dataset with binary values
 	************************************/
-	--DECLARE @normalizedIndicatorValues TABLE
-	--(
-	--	[QuoteId] INT,
-	--	[CompanyId] INT,
-	--	[Date] DATE, 
-	--	[MACDSignalCrossedAboveZeroLine] INT, 
-	--	[MACDSignalCrossedBelowZeroLine] INT, 
-	--	[IsStochasticOverBought] INT, 
-	--	[IsStochasticOverSold] INT, 
-	--	[IsStochasticNeitherOverBoughtOrOverSold] INT, 
-	--	[Output_TriggeredRiseFirst] INT, 
-	--	[Output_TriggeredFallFirst] INT
-	--)
+	INSERT INTO @datasetValues
+	SELECT quotes.[QuoteId],
 
-	--INSERT INTO @normalizedIndicatorValues
-	--SELECT  [QuoteId],
-	--		[CompanyId],
-	--		[Date],
+		   -- MACD
+		   CASE WHEN [MACD] > 0.0 THEN 1 ELSE 0 END [I_IsMACDAboveZeroLine],
 
-	--		-- Buy signals
-	--		--(not sure this is valid case) CASE WHEN [MACDSignal] >= 0 AND (LAG([MACDSignal], 1) OVER (ORDER BY [QuoteId])) < 0 THEN 1 ELSE 0 END [MACDSignalCrossedAboveZeroLine],
-	--		-- SMA(longTerm) crosses over SMA(shortTerm)
-	--		-- MACD crosses over zero
-	--		-- MACD Crosses over MACDSignalLine
-	--		-- RSI Crosses above 50 (when stock is trending up)
-			
-	--		-- Stochastic
-	--		CASE WHEN [StochasticK] >= 70 THEN 1 ELSE 0 END [IsStochasticOverBought],
-	--		CASE WHEN [StochasticK] <= 30 THEN 1 ELSE 0 END [IsStochasticOverSold],
-	--		CASE WHEN [StochasticK] < 70 AND [StochasticK] > 30 THEN 1 ELSE 0 END [IsStochasticNeitherOverBoughtOrOverSold],
+		   -- Stochastic
+		   CASE WHEN [StochasticK] >= 70 THEN 1 ELSE 0 END [I_IsStochasticOverBought],
+		   CASE WHEN [StochasticK] <= 30 THEN 1 ELSE 0 END [I_IsStochasticOverSold],
+		   CASE WHEN [StochasticK] < 70 AND [StochasticK] > 30 THEN 1 ELSE 0 END [I_IsStochasticNeitherOverBoughtOrOverSold],
 
-	--		-- Outputs
-	--		CASE WHEN [Output_TriggeredRiseFirst] = 1 THEN 1 ELSE 0 END [Output_TriggeredRiseFirst],
-	--		CASE WHEN [Output_TriggeredFallFirst] = 1 THEN 1 ELSE 0 END [Output_TriggeredFallFirst]
-	--FROM @combinedIndicatorValues
+		   -- RSI
+		   CASE WHEN [RSI] >= 70 THEN 1 ELSE 0 END [I_IsRSIOverBought],
+		   CASE WHEN [RSI] <= 30 THEN 1 ELSE 0 END [I_IsRSIOverSold],
+		   CASE WHEN [RSI] < 70 AND [RSI] > 30 THEN 1 ELSE 0 END [I_IsRSINeitherOverBoughtOrOverSold],
 
-	/******************************************
-		Normalized indicator values, filtered
-	*******************************************/
-	--SELECT  [QuoteId],
-	--		[CompanyId],
-	--		[Date],
+		   -- CCI
+		   CASE WHEN [CCI] >= 70 THEN 1 ELSE 0 END [I_IsCCIOverBought],
+		   CASE WHEN [CCI] <= 30 THEN 1 ELSE 0 END [I_IsCCIOverSold],
+		   CASE WHEN [CCI] < 70 AND [CCI] > 30 THEN 1 ELSE 0 END [I_IsCCINeitherOverBoughtOrOverSold],
 
-	--		-- MACD
-	--		[MACDSignalCrossedAboveZeroLine],
-	--		[MACDSignalCrossedBelowZeroLine],
+		   -- SMA
+		   CASE WHEN [SMAShort] > [SMALong] THEN 1 ELSE 0 END [I_IsSMAShortGreaterThanLong],
 
-	--		-- Stochastic
-	--		[IsStochasticOverBought],
-	--		[IsStochasticOverSold],
-	--		[IsStochasticNeitherOverBoughtOrOverSold],
-			
-	--		-- Outputs
-	--		[Output_TriggeredRiseFirst],
-	--		[Output_TriggeredFallFirst]
-	--FROM @normalizedIndicatorValues
-	--WHERE ([MACDSignalCrossedAboveZeroLine] = 1 OR [MACDSignalCrossedBelowZeroLine] = 1)
+		   -- EMA
+		   CASE WHEN [EMAShort] > [EMALong] THEN 1 ELSE 0 END [I_IsEMAShortGreaterThanLong],
+
+			-- Outputs
+		   CASE WHEN [TriggeredRiseFirst] = 1 THEN 1 ELSE 0 END [O_TriggeredRiseFirst],
+		   CASE WHEN [TriggeredFallFirst] = 1 THEN 1 ELSE 0 END [O_TriggeredFallFirst]
+	FROM @companyQuotes quotes INNER JOIN @combinedIndicatorValues indicatorValues ON quotes.[QuoteId] = indicatorValues.[QuoteId]
+	WHERE [Date] >= @returnDatasetStartDate AND [Date] <= @returnDatasetEndDate
+	ORDER BY [Date]
+
+	RETURN;
 END
 GO
