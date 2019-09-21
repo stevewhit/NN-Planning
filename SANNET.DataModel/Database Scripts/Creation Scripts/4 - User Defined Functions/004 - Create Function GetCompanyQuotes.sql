@@ -3,7 +3,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'IF' and name = 'GetCompanyQuotes')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'TF' and name = 'GetCompanyQuotes')
 BEGIN
 	PRINT 'Dropping "GetCompanyQuotes" function...'
 	DROP FUNCTION GetCompanyQuotes
@@ -22,16 +22,27 @@ CREATE FUNCTION [dbo].[GetCompanyQuotes]
 (	
 	@companyId int
 )
-RETURNS TABLE 
-AS
-RETURN 
+RETURNS @companyQuotes TABLE
 (
-	SELECT [Id],
-		   (SELECT [RowNum] 
-			FROM (SELECT Id, ROW_NUMBER() OVER(ORDER BY Id) as [RowNum] 
-				  FROM [StockMarketData].dbo.Quotes quotes 
-				  WHERE quotes.CompanyId = quotesOuter.CompanyId) rowNums 
-			WHERE rowNums.Id = quotesOuter.Id) as [CompanyQuoteNum],
+	[QuoteId] INT UNIQUE,
+	[CompanyQuoteNum] INT UNIQUE,
+	[CompanyId] INT,
+	[Date] DATE UNIQUE,
+	[Open] DECIMAL(9, 3),
+	[High] DECIMAL(9, 3),
+	[Low] DECIMAL(9, 3),
+	[Close] DECIMAL(9, 3),
+	[Volume] BIGINT
+)
+AS
+BEGIN
+
+	/*********************************************
+		Return ordered company quotes.
+	**********************************************/
+	INSERT INTO @companyQuotes
+	SELECT [Id] as [QuoteId],
+		   ROW_NUMBER() OVER(ORDER BY [Date]) as [CompanyQuoteNum],
 		   [CompanyId],
 		   [Date],
 		   [Open],
@@ -39,7 +50,10 @@ RETURN
 		   [Low],
 		   [Close],
 		   [Volume]
-	FROM [StockMarketData].[dbo].[Quotes] quotesOuter
+	FROM [StockMarketData].[dbo].[Quotes] 
 	WHERE [CompanyId] = @companyId
-)
+	ORDER BY [Date]
+
+	RETURN;
+END
 GO

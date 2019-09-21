@@ -31,31 +31,41 @@ CREATE FUNCTION [dbo].[GetFutureFiveDayPerformanceValues]
 RETURNS @fiveDayPerformanceValues TABLE
 (
 	[QuoteId] INT UNIQUE,
-	[CompanyId] INT,
-	[Date] DATE UNIQUE,
 	[TriggeredRiseFirst] BIT,
 	[TriggeredFallFirst] BIT
 )
 AS
 BEGIN
 
+	/*********************************************
+		Table to hold numbered quotes.
+	**********************************************/
+	DECLARE @companyQuotes TABLE
+	(
+		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT UNIQUE,
+        [Date] DATE UNIQUE,
+		[CompanyId] INT,
+		[Close] DECIMAL(9, 3)
+	)
+
+	INSERT INTO @companyQuotes
+	SELECT [QuoteId], [CompanyQuoteNum], [Date], [CompanyId], [Close]
+	FROM GetCompanyQuotes(@companyId)
+	WHERE [Date] >= @startDate
+	ORDER BY [CompanyQuoteNum]
+
 	/*********************************************************************************************
-		Table to hold the performance outputs starting from the @startDate 
+		Table to hold the performance outputs
 	*********************************************************************************************/
 	DECLARE @fiveDayPerformance TABLE
 	(
 		[QuoteId] INT UNIQUE,
-		[CompanyId] INT,
-		[Date] DATE UNIQUE,
-		[Close] DECIMAL(9, 3),
 		[FiveDayOutcomeType] INT
 	)
 
 	INSERT INTO @fiveDayPerformance
-	SELECT [Id] as [QuoteId],
-		   [CompanyId],
-		   [Date],
-		   [Close],
+	SELECT [QuoteId],
 		   CASE WHEN LEAD([Close], 1) OVER (ORDER BY [Date]) > [Close] * @riseMultiplierTrigger THEN 1
 				ELSE CASE WHEN LEAD([Close], 1) OVER (ORDER BY [Date]) < [Close] * @fallMultiplierTrigger THEN -1
 					 ELSE CASE WHEN LEAD([Close], 2) OVER (ORDER BY [Date]) > [Close] * @riseMultiplierTrigger THEN 1
@@ -68,21 +78,18 @@ BEGIN
 													    ELSE CASE WHEN LEAD([Close], 5) OVER (ORDER BY [Date]) < [Close] * @fallMultiplierTrigger THEN -1
 															 ELSE 0
 														END END END END END END END END END END as [FiveDayOutcomeType]
-	FROM GetCompanyQuotes(@companyId)
-	WHERE [CompanyId] = @companyId AND [Date] >= @startDate
-	ORDER BY [Date]
+	FROM @companyQuotes
 	
 	/*********************************************************************************************
 		Return dataset
 	*********************************************************************************************/
 	INSERT INTO @fiveDayPerformanceValues
-	SELECT [QuoteId],
-		   [CompanyId],
-		   [Date],
+	SELECT quotes.[QuoteId],
 		   CASE WHEN [FiveDayOutcomeType] = 1 THEN 1 ELSE 0 END as [TriggeredRiseFirst],
 		   CASE WHEN [FiveDayOutcomeType] = -1 THEN 1 ELSE 0 END as [TriggeredFallFirst]
-	FROM @fiveDayPerformance
-	WHERE [CompanyId] = @companyId AND [Date] >= @startDate AND [Date] <= @endDate
+	FROM @fiveDayPerformance fdp 
+		INNER JOIN @companyQuotes quotes ON quotes.[QuoteId] = fdp.[QuoteId]
+	WHERE [Date] >= @startDate AND [Date] <= @endDate
 	ORDER BY [Date]
 
 	RETURN;

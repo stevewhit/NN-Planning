@@ -36,7 +36,7 @@ BEGIN
 			@smaPeriodLong INT = 50,
 			@emaPeriod INT = 14,
 			@closeTrendSlopePeriod INT = 60,
-			@minCloseTrendSlope DECIMAL(9, 4) = -20.00,
+			@minCloseTrendSlope DECIMAL(9, 4) = 2.00,
 			@performanceRiseMultiplier DECIMAL(8, 4) = 1.04,
 			@performanceFallMultiplier DECIMAL(8, 4) = .98
 
@@ -58,8 +58,9 @@ BEGIN
 	)
 
 	INSERT INTO @companyQuotes
-	SELECT [Id], [CompanyQuoteNum], [Date], [CompanyId] 
+	SELECT [QuoteId], [CompanyQuoteNum], [Date], [CompanyId] 
 	FROM GetCompanyQuotes(@companyId)
+	ORDER BY [CompanyQuoteNum]
 
 	/****************************************************************
 		Update start and end dates for the indicator calculations

@@ -30,8 +30,6 @@ CREATE FUNCTION [dbo].[GetMovingAverageConvergenceDivergenceValues]
 RETURNS @macdReturnValues TABLE
 (
 	[QuoteId] INT UNIQUE, 
-	[CompanyId] INT,  
-	[Date] DATE UNIQUE, 
 	[MACD] DECIMAL(9, 4),
 	[MACDSignal] DECIMAL(9, 4),
 	[MACDHistogram] DECIMAL(9, 4)
@@ -39,7 +37,7 @@ RETURNS @macdReturnValues TABLE
 AS
 BEGIN
 
-	-- Verified 09-14-2019 --
+	-- Verified 09-20-2019 --
 
 	/*******************************************************
 		Table to hold numbered quotes for a company.
@@ -54,8 +52,10 @@ BEGIN
 	)
 
 	INSERT INTO @companyQuotes
-	SELECT [Id], [CompanyQuoteNum], [CompanyId], [Date], [Close] 
+	SELECT [QuoteId], [CompanyQuoteNum], [CompanyId], [Date], [Close] 
 	FROM GetCompanyQuotes(@companyId)
+	WHERE [Date] <= @endDate
+	ORDER BY [CompanyQuoteNum]
 	 
 	/*********************************************************************************************
 		Short-period MACD values
@@ -197,14 +197,13 @@ BEGIN
 	*********************************************************************************************/
 	INSERT INTO @macdReturnValues
 	SELECT quotes.[QuoteId],
-		   quotes.[CompanyId],
-		   quotes.[Date],
 		   [MACD],
 		   [MACDSignal],
 		   [MACDShort] - [MACDLong] - [MACDSignal] as [MACDHistogram]
 	FROM @companyQuotes quotes INNER JOIN @macdValues macdValues ON quotes.QuoteId = macdValues.QuoteId
 							   INNER JOIN @macdSignalLineValues macdSignal ON quotes.QuoteId = macdSignal.QuoteId
 	WHERE quotes.[Date] >= @startDate AND quotes.[Date] <= @endDate
+	ORDER BY quotes.[Date]
 
 	RETURN;
 END

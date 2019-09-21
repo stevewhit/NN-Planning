@@ -28,39 +28,60 @@ CREATE FUNCTION [dbo].[GetSimpleMovingAverageValues]
 RETURNS @smaReturnValues TABLE
 (
 	[QuoteId] INT UNIQUE, 
-	[CompanyId] INT,  
-	[Date] DATE UNIQUE, 
 	[SMA] DECIMAL(9, 4)
 )
 AS
 BEGIN
 
-	-- Verified 09/02/2019 --
+	-- Verified 09/20/2019 --
 
+	/*******************************************************
+		Table to hold numbered quotes for a company.
+	********************************************************/
 	DECLARE @companyQuotes TABLE
 	(
-		[Id] INT UNIQUE,
-		[CompanyId] INT,
+		[QuoteId] INT UNIQUE,
+		[CompanyQuoteNum] INT UNIQUE,
 		[Date] DATE UNIQUE,
+		[CompanyId] INT,
 		[Close] DECIMAL(9, 3)
 	)
 
 	INSERT INTO @companyQuotes 
-	SELECT [Id], [CompanyId], [Date], [Close] from GetCompanyQuotes(@companyId)
+	SELECT [QuoteId], [CompanyQuoteNum], [Date], [CompanyId], [Close] 
+	FROM GetCompanyQuotes(@companyId)
+	WHERE [Date] <= @endDate
+	ORDER BY [CompanyQuoteNum]
 
-	INSERT INTO @smaReturnValues
+	/*******************************************************
+		Table to hold SMA values for a company
+	********************************************************/
+	DECLARE @quoteSMAs TABLE
+	(
+		[QuoteId] INT,
+		[SMA] DECIMAL(9, 4)
+	)
+
+	INSERT INTO @quoteSMAs
 	SELECT [QuoteId],
-		   [CompanyId],
-		   [Date],
+		   CASE WHEN [CompanyQuoteNum] < @smaPeriod
+				THEN NULL
+				ELSE (SELECT AVG(CloseInner) 
+					  FROM (SELECT quotesInner.[Close] as [CloseInner] 
+						    FROM @companyQuotes quotesInner 
+						    WHERE quotesInner.[CompanyQuoteNum] <= quotesOuter.[CompanyQuoteNum] AND quotesInner.[CompanyQuoteNum] >= (quotesOuter.[CompanyQuoteNum] - @smaPeriod + 1)) as MovingAverageInner)
+				END as [SMA]
+	FROM @companyQuotes quotesOuter
+
+	/*******************************************************
+		Return dataset
+	********************************************************/
+	INSERT INTO @smaReturnValues
+	SELECT quotes.[QuoteId],
 		   [SMA]
-	FROM (SELECT [Id] as [QuoteId],
-				[CompanyId],
-				[Date],
-				[Close],
-				(SELECT AVG(CloseInner) FROM (SELECT quotesInner.[Close] as [CloseInner] FROM @companyQuotes quotesInner WHERE quotesInner.[CompanyId] = @companyId AND quotesInner.[Id] <= quotesOuter.[Id] AND quotesInner.[Id] >= (quotesOuter.[Id] - @smaPeriod + 1)) as MovingAverageInner) as [SMA]
-		  FROM @companyQuotes quotesOuter
-		  WHERE [CompanyId] = @companyId) smaEntire
+	FROM @companyQuotes quotes INNER JOIN @quoteSMAs smas ON quotes.[QuoteId] = smas.[QuoteId]
 	WHERE [Date] >= @startDate AND [Date] <= @endDate 
+	ORDER BY [Date]
 
 	RETURN;
 END

@@ -48,8 +48,9 @@ BEGIN
 	)
 
 	INSERT INTO @companyQuotes
-	SELECT [Id], [CompanyQuoteNum], [Date], [CompanyId], [Close]
+	SELECT [QuoteId], [CompanyQuoteNum], [Date], [CompanyId], [Close]
 	FROM GetCompanyQuotes(@companyId)
+	WHERE [Date] <= @endDate
 	ORDER BY [CompanyQuoteNum]
 
 	/*****************************************************
