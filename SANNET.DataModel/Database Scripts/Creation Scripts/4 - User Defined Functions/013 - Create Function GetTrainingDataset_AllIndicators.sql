@@ -20,26 +20,25 @@ GO
 -- ==========================================================================================================
 CREATE FUNCTION [dbo].[GetDataset_AllIndicators] 
 (
-	@companyId int,
 	@quoteId int
 )
 RETURNS @datasetValues TABLE
 (
 	[QuoteId] INT UNIQUE,
-	[I_IsMACDAboveZeroLine] BIT, 
-	[I_IsStochasticOverBought] BIT, 
-	[I_IsStochasticOverSold] BIT, 
-	[I_IsStochasticNeitherOverBoughtOrOverSold] BIT, 
-	[I_IsRSIOverBought] BIT,
-	[I_IsRSIOverSold] BIT,
-	[I_IsRSINeitherOverBoughtOrOverSold] BIT, 
-	[I_IsCCIOverBought] BIT,
-	[I_IsCCIOverSold] BIT,
-	[I_IsCCINeitherOverBoughtOrOverSold] BIT, 
-	[I_IsSMAShortGreaterThanLong] BIT,
-	[I_IsEMAShortGreaterThanLong] BIT,
-	[O_TriggeredRiseFirst] BIT, 
-	[O_TriggeredFallFirst] BIT
+	[I_IsMACDAboveZeroLine] BIT NOT NULL, 
+	[I_IsStochasticOverBought] BIT NOT NULL, 
+	[I_IsStochasticOverSold] BIT NOT NULL, 
+	[I_IsStochasticNeitherOverBoughtOrOverSold] BIT NOT NULL, 
+	[I_IsRSIOverBought] BIT NOT NULL,
+	[I_IsRSIOverSold] BIT NOT NULL,
+	[I_IsRSINeitherOverBoughtOrOverSold] BIT NOT NULL, 
+	[I_IsCCIOverBought] BIT NOT NULL,
+	[I_IsCCIOverSold] BIT NOT NULL,
+	[I_IsCCINeitherOverBoughtOrOverSold] BIT NOT NULL, 
+	[I_IsSMAShortGreaterThanLong] BIT NOT NULL,
+	[I_IsEMAShortGreaterThanLong] BIT NOT NULL,
+	[O_TriggeredRiseFirst] BIT NOT NULL, 
+	[O_TriggeredFallFirst] BIT NOT NULL
 )
 AS
 BEGIN
@@ -54,15 +53,17 @@ BEGIN
 			@smaPeriodLong INT = 50,
 			@emaPeriod INT = 14,
 			@closeTrendSlopePeriod INT = 60,
-			@minCloseTrendSlope DECIMAL(9, 4) = 2.00,
-			@performanceRiseMultiplier DECIMAL(8, 4) = 1.04,
-			@performanceFallMultiplier DECIMAL(8, 4) = .98
+			@minCloseTrendSlope DECIMAL(9, 4) = 0.05,
+			@performanceRiseMultiplier DECIMAL(8, 4) = 1.02,
+			@performanceFallMultiplier DECIMAL(8, 4) = .99
 
 	DECLARE	@quotesToSkipAtStart INT = (SELECT MAX(v) FROM (VALUES (@macdPeriodLong + @macdSignalPeriod - 1), (@stochasticPeriod + @stochasticSMAPeriod - 1), (@closeTrendSlopePeriod)) as VALUE(v)),
 			@quotesToSkipAtEnd INT = 5,
 			@quoteDate DATE,
 			@returnDatasetStartDate DATE,
-			@returnDatasetEndDate DATE
+			@returnDatasetEndDate DATE,
+			@oldestDateToReturnDatasetFor DATE,
+			@companyId INT = (SELECT [CompanyId] FROM StockMarketData.dbo.Quotes WHERE [Id] = @quoteId)
 
 	/*********************************************
 		Table to hold numbered quotes.
@@ -84,6 +85,7 @@ BEGIN
 		Update start and end dates for the indicator calculations
 	*****************************************************************/
 	SET @quoteDate = (SELECT [Date] FROM @companyQuotes WHERE [QuoteId] = @quoteId)
+	SET @oldestDateToReturnDatasetFor = DATEADD(M, -6, GETDATE())
 	SET @returnDatasetStartDate = (SELECT MIN([Date]) FROM @companyQuotes WHERE [Date] <= @quoteDate AND [CompanyQuoteNum] >= @quotesToSkipAtStart)
 	SET @returnDatasetEndDate = (SELECT MAX([Date]) FROM @companyQuotes WHERE [Date] <= @quoteDate AND [CompanyQuoteNum] <= (SELECT MAX([CompanyQuoteNum]) FROM @companyQuotes) - @quotesToSkipAtEnd)
 
@@ -122,11 +124,12 @@ BEGIN
 	[EMAShort] DECIMAL(9, 4),
 	[EMALong] DECIMAL(9, 4),
 	[CloseTrendSlope] DECIMAL(9, 4),
-	[TriggeredRiseFirst] BIT, 
-	[TriggeredFallFirst] BIT);
+	[TriggeredRiseFirst] BIT NOT NULL, 
+	[TriggeredFallFirst] BIT NOT NULL);
 
-	-- Only return a populated dataset if the current quote closeTrendSlope is > @minCloseTrendSlope --
-	IF (SELECT [CloseTrendSlope] FROM @closeTrendSlopes WHERE [QuoteId] = @quoteId) >= @minCloseTrendSlope
+	-- Only return a populated dataset if the current quote closeTrendSlope is > @minCloseTrendSlope 
+	-- and if the @quoteDate is > @oldestDateToReturnDatasetFor
+	IF @quoteDate > @oldestDateToReturnDatasetFor AND (SELECT [CloseTrendSlope] FROM @closeTrendSlopes WHERE [QuoteId] = @quoteId) >= @minCloseTrendSlope
 	BEGIN
 		INSERT INTO @combinedIndicatorValues
 		SELECT  macdValues.[QuoteId],

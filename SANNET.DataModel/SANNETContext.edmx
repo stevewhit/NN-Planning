@@ -24,10 +24,8 @@
             <PropertyRef Name="Id" />
           </Key>
           <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="DatasetRetrievalMethodId" Type="int" Nullable="false" />
           <Property Name="NumHiddenLayers" Type="int" Nullable="false" />
           <Property Name="NumHiddenLayerNeurons" Type="int" Nullable="false" />
-          <Property Name="NumTrainingMonths" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="Predictions">
           <Key>
@@ -54,20 +52,22 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Function Name="GetTestingDataset1" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
-          <Parameter Name="companyId" Type="int" Mode="In" />
-          <Parameter Name="date" Type="date" Mode="In" />
+        <Function Name="ApplicationLogInsert" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="logDate" Type="datetime" Mode="In" />
+          <Parameter Name="thread" Type="nvarchar" Mode="In" />
+          <Parameter Name="logLevel" Type="nvarchar" Mode="In" />
+          <Parameter Name="logger" Type="nvarchar" Mode="In" />
+          <Parameter Name="message" Type="nvarchar(max)" Mode="In" />
+          <Parameter Name="exception" Type="nvarchar(max)" Mode="In" />
+          <Parameter Name="location" Type="nvarchar" Mode="In" />
+          <Parameter Name="userId" Type="nvarchar" Mode="In" />
         </Function>
-        <Function Name="GetTestingDataset2" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
-          <Parameter Name="lastId" Type="int" Mode="In" />
+        <Function Name="ApplicationLogSelect" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
+        <Function Name="GetTestingDataset" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="quoteId" Type="int" Mode="In" />
         </Function>
-        <Function Name="GetTrainingDataset1" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
-          <Parameter Name="companyId" Type="int" Mode="In" />
-          <Parameter Name="startDate" Type="date" Mode="In" />
-          <Parameter Name="endDate" Type="date" Mode="In" />
-        </Function>
-        <Function Name="GetTrainingDataset2" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
-          <Parameter Name="id" Type="int" Mode="In" />
+        <Function Name="GetTrainingDataset" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="quoteId" Type="int" Mode="In" />
         </Function>
         <EntityContainer Name="SANNETDataModelStoreContainer">
           <EntitySet Name="ApplicationLogs" EntityType="Self.ApplicationLogs" Schema="dbo" store:Type="Tables" />
@@ -90,20 +90,22 @@
             <End Role="NetworkConfiguration" EntitySet="NetworkConfigurations" />
             <End Role="Prediction" EntitySet="Predictions" />
           </AssociationSet>
-          <FunctionImport Name="GetTestingDataset1" ReturnType="Collection(SANNET.DataModel.GetTestingDataset1_Result)">
-            <Parameter Name="companyId" Mode="In" Type="Int32" />
-            <Parameter Name="date" Mode="In" Type="DateTime" />
+          <FunctionImport Name="ApplicationLogInsert">
+            <Parameter Name="logDate" Mode="In" Type="DateTime" />
+            <Parameter Name="thread" Mode="In" Type="String" />
+            <Parameter Name="logLevel" Mode="In" Type="String" />
+            <Parameter Name="logger" Mode="In" Type="String" />
+            <Parameter Name="message" Mode="In" Type="String" />
+            <Parameter Name="exception" Mode="In" Type="String" />
+            <Parameter Name="location" Mode="In" Type="String" />
+            <Parameter Name="userId" Mode="In" Type="String" />
           </FunctionImport>
-          <FunctionImport Name="GetTestingDataset2" ReturnType="Collection(SANNET.DataModel.GetTestingDataset2_Result)">
-            <Parameter Name="lastId" Mode="In" Type="Int32" />
+          <FunctionImport Name="ApplicationLogSelect" ReturnType="Collection(SANNET.DataModel.ApplicationLogSelect_Result)" />
+          <FunctionImport Name="GetTestingDataset" ReturnType="Collection(SANNET.DataModel.GetTestingDataset_Result)">
+            <Parameter Name="quoteId" Mode="In" Type="Int32" />
           </FunctionImport>
-          <FunctionImport Name="GetTrainingDataset1" ReturnType="Collection(SANNET.DataModel.GetTrainingDataset1_Result)">
-            <Parameter Name="companyId" Mode="In" Type="Int32" />
-            <Parameter Name="startDate" Mode="In" Type="DateTime" />
-            <Parameter Name="endDate" Mode="In" Type="DateTime" />
-          </FunctionImport>
-          <FunctionImport Name="GetTrainingDataset2" ReturnType="Collection(SANNET.DataModel.GetTrainingDataset2_Result)">
-            <Parameter Name="id" Mode="In" Type="Int32" />
+          <FunctionImport Name="GetTrainingDataset" ReturnType="Collection(SANNET.DataModel.GetTrainingDataset_Result)">
+            <Parameter Name="quoteId" Mode="In" Type="Int32" />
           </FunctionImport>
         </EntityContainer>
         <EntityType Name="ApplicationLog">
@@ -125,10 +127,8 @@
             <PropertyRef Name="Id" />
           </Key>
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="DatasetRetrievalMethodId" Type="Int32" Nullable="false" />
           <Property Name="NumHiddenLayers" Type="Int32" Nullable="false" />
           <Property Name="NumHiddenLayerNeurons" Type="Int32" Nullable="false" />
-          <Property Name="NumTrainingMonths" Type="Int32" Nullable="false" />
           <NavigationProperty Name="Predictions" Relationship="SANNET.DataModel.FK_Predictions_NetworkConfigurations" FromRole="NetworkConfiguration" ToRole="Prediction" />
         </EntityType>
         <EntityType Name="Prediction">
@@ -157,56 +157,50 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <ComplexType Name="GetTestingDataset1_Result">
-          <Property Type="Int32" Name="Output_TriggeredRiseFirst" Nullable="false" />
-          <Property Type="Int32" Name="Output_TriggeredFallFirst" Nullable="false" />
+        <ComplexType Name="ApplicationLogSelect_Result">
+          <Property Type="Int32" Name="Id" Nullable="false" />
+          <Property Type="DateTime" Name="Date" Nullable="true" Precision="23" />
+          <Property Type="String" Name="Thread" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="Level" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="Logger" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="Message" Nullable="true" />
+          <Property Type="String" Name="Exception" Nullable="true" />
+          <Property Type="String" Name="Location" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="UserId" Nullable="true" MaxLength="255" />
         </ComplexType>
-        <ComplexType Name="GetTestingDataset2_Result">
-          <Property Type="Int32" Name="O1" Nullable="true" />
-          <Property Type="Int32" Name="O2" Nullable="true" />
-          <Property Type="Int32" Name="O3" Nullable="true" />
-          <Property Type="Int32" Name="O4" Nullable="true" />
+        <ComplexType Name="GetTestingDataset_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="true" />
+          <Property Type="Boolean" Name="I_IsMACDAboveZeroLine" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticNeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSIOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSIOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSINeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCIOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCIOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCINeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsSMAShortGreaterThanLong" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsEMAShortGreaterThanLong" Nullable="false" />
+          <Property Type="Boolean" Name="O_TriggeredRiseFirst" Nullable="false" />
+          <Property Type="Boolean" Name="O_TriggeredFallFirst" Nullable="false" />
         </ComplexType>
-        <ComplexType Name="GetTrainingDataset1_Result">
-          <Property Type="DateTime" Name="Date" Nullable="true" />
-          <Property Type="Int32" Name="CompanyId" Nullable="true" />
-          <Property Type="Decimal" Name="RSIShortNormalized" Nullable="true" Precision="18" Scale="7" />
-          <Property Type="Int32" Name="IsRSIShortOverBought" Nullable="false" />
-          <Property Type="Int32" Name="IsRSIShortOverSold" Nullable="false" />
-          <Property Type="Int32" Name="RSIShortJustCrossedIntoOverBought" Nullable="false" />
-          <Property Type="Int32" Name="RSIShortJustCrossedIntoOverSold" Nullable="false" />
-          <Property Type="Decimal" Name="RSILongNormalized" Nullable="true" Precision="18" Scale="7" />
-          <Property Type="Int32" Name="IsRSILongOverBought" Nullable="false" />
-          <Property Type="Int32" Name="IsRSILongOverSold" Nullable="false" />
-          <Property Type="Int32" Name="RSILongJustCrossedIntoOverBought" Nullable="false" />
-          <Property Type="Int32" Name="RSILongJustCrossedIntoOverSold" Nullable="false" />
-          <Property Type="Int32" Name="RSIShortJustCrossedOverLong" Nullable="false" />
-          <Property Type="Int32" Name="RSIShortGreaterThanLongForAwhile" Nullable="false" />
-          <Property Type="Int32" Name="RSILongJustCrossedOverShort" Nullable="false" />
-          <Property Type="Int32" Name="RSILongGreaterThanShortForAwhile" Nullable="false" />
-          <Property Type="Int32" Name="CCIShortJustCrossedAboveZero" Nullable="false" />
-          <Property Type="Int32" Name="CCIShortJustCrossedBelowZero" Nullable="false" />
-          <Property Type="Int32" Name="CCILongJustCrossedAboveZero" Nullable="false" />
-          <Property Type="Int32" Name="CCILongJustCrossedBelowZero" Nullable="false" />
-          <Property Type="Int32" Name="SMAShortAboveClose" Nullable="false" />
-          <Property Type="Int32" Name="SMALongAboveClose" Nullable="false" />
-          <Property Type="Int32" Name="SMAShortJustCrossedOverLong" Nullable="false" />
-          <Property Type="Int32" Name="SMAShortGreaterThanLongForAwhile" Nullable="false" />
-          <Property Type="Int32" Name="SMALongJustCrossedOverShort" Nullable="false" />
-          <Property Type="Int32" Name="SMALongGreaterThanShortForAwhile" Nullable="false" />
-          <Property Type="Int32" Name="Output_TriggeredRiseFirst" Nullable="false" />
-          <Property Type="Int32" Name="Output_TriggeredFallFirst" Nullable="false" />
-        </ComplexType>
-        <ComplexType Name="GetTrainingDataset2_Result">
-          <Property Type="Int32" Name="Id" Nullable="true" />
-          <Property Type="Int32" Name="I1" Nullable="true" />
-          <Property Type="Int32" Name="I2" Nullable="true" />
-          <Property Type="Int32" Name="I3" Nullable="true" />
-          <Property Type="Int32" Name="I4" Nullable="true" />
-          <Property Type="Int32" Name="O1" Nullable="true" />
-          <Property Type="Int32" Name="O2" Nullable="true" />
-          <Property Type="Int32" Name="O3" Nullable="true" />
-          <Property Type="Int32" Name="O4" Nullable="true" />
+        <ComplexType Name="GetTrainingDataset_Result">
+          <Property Type="Int32" Name="QuoteId" Nullable="true" />
+          <Property Type="Boolean" Name="I_IsMACDAboveZeroLine" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsStochasticNeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSIOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSIOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsRSINeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCIOverBought" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCIOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsCCINeitherOverBoughtOrOverSold" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsSMAShortGreaterThanLong" Nullable="false" />
+          <Property Type="Boolean" Name="I_IsEMAShortGreaterThanLong" Nullable="false" />
+          <Property Type="Boolean" Name="O_TriggeredRiseFirst" Nullable="false" />
+          <Property Type="Boolean" Name="O_TriggeredFallFirst" Nullable="false" />
         </ComplexType>
         </Schema>
     </edmx:ConceptualModels>
@@ -232,10 +226,8 @@
           <EntitySetMapping Name="NetworkConfigurations">
             <EntityTypeMapping TypeName="SANNET.DataModel.NetworkConfiguration">
               <MappingFragment StoreEntitySet="NetworkConfigurations">
-                <ScalarProperty Name="NumTrainingMonths" ColumnName="NumTrainingMonths" />
                 <ScalarProperty Name="NumHiddenLayerNeurons" ColumnName="NumHiddenLayerNeurons" />
                 <ScalarProperty Name="NumHiddenLayers" ColumnName="NumHiddenLayers" />
-                <ScalarProperty Name="DatasetRetrievalMethodId" ColumnName="DatasetRetrievalMethodId" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -254,70 +246,61 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <FunctionImportMapping FunctionImportName="GetTestingDataset1" FunctionName="SANNET.DataModel.Store.GetTestingDataset1">
+          <FunctionImportMapping FunctionImportName="ApplicationLogInsert" FunctionName="SANNET.DataModel.Store.ApplicationLogInsert" />
+          <FunctionImportMapping FunctionImportName="ApplicationLogSelect" FunctionName="SANNET.DataModel.Store.ApplicationLogSelect">
             <ResultMapping>
-              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTestingDataset1_Result">
-                <ScalarProperty Name="Output_TriggeredRiseFirst" ColumnName="Output_TriggeredRiseFirst" />
-                <ScalarProperty Name="Output_TriggeredFallFirst" ColumnName="Output_TriggeredFallFirst" />
-              </ComplexTypeMapping>
-            </ResultMapping>
-          </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="GetTestingDataset2" FunctionName="SANNET.DataModel.Store.GetTestingDataset2">
-            <ResultMapping>
-              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTestingDataset2_Result">
-                <ScalarProperty Name="O1" ColumnName="O1" />
-                <ScalarProperty Name="O2" ColumnName="O2" />
-                <ScalarProperty Name="O3" ColumnName="O3" />
-                <ScalarProperty Name="O4" ColumnName="O4" />
-              </ComplexTypeMapping>
-            </ResultMapping>
-          </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="GetTrainingDataset1" FunctionName="SANNET.DataModel.Store.GetTrainingDataset1">
-            <ResultMapping>
-              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTrainingDataset1_Result">
-                <ScalarProperty Name="Date" ColumnName="Date" />
-                <ScalarProperty Name="CompanyId" ColumnName="CompanyId" />
-                <ScalarProperty Name="RSIShortNormalized" ColumnName="RSIShortNormalized" />
-                <ScalarProperty Name="IsRSIShortOverBought" ColumnName="IsRSIShortOverBought" />
-                <ScalarProperty Name="IsRSIShortOverSold" ColumnName="IsRSIShortOverSold" />
-                <ScalarProperty Name="RSIShortJustCrossedIntoOverBought" ColumnName="RSIShortJustCrossedIntoOverBought" />
-                <ScalarProperty Name="RSIShortJustCrossedIntoOverSold" ColumnName="RSIShortJustCrossedIntoOverSold" />
-                <ScalarProperty Name="RSILongNormalized" ColumnName="RSILongNormalized" />
-                <ScalarProperty Name="IsRSILongOverBought" ColumnName="IsRSILongOverBought" />
-                <ScalarProperty Name="IsRSILongOverSold" ColumnName="IsRSILongOverSold" />
-                <ScalarProperty Name="RSILongJustCrossedIntoOverBought" ColumnName="RSILongJustCrossedIntoOverBought" />
-                <ScalarProperty Name="RSILongJustCrossedIntoOverSold" ColumnName="RSILongJustCrossedIntoOverSold" />
-                <ScalarProperty Name="RSIShortJustCrossedOverLong" ColumnName="RSIShortJustCrossedOverLong" />
-                <ScalarProperty Name="RSIShortGreaterThanLongForAwhile" ColumnName="RSIShortGreaterThanLongForAwhile" />
-                <ScalarProperty Name="RSILongJustCrossedOverShort" ColumnName="RSILongJustCrossedOverShort" />
-                <ScalarProperty Name="RSILongGreaterThanShortForAwhile" ColumnName="RSILongGreaterThanShortForAwhile" />
-                <ScalarProperty Name="CCIShortJustCrossedAboveZero" ColumnName="CCIShortJustCrossedAboveZero" />
-                <ScalarProperty Name="CCIShortJustCrossedBelowZero" ColumnName="CCIShortJustCrossedBelowZero" />
-                <ScalarProperty Name="CCILongJustCrossedAboveZero" ColumnName="CCILongJustCrossedAboveZero" />
-                <ScalarProperty Name="CCILongJustCrossedBelowZero" ColumnName="CCILongJustCrossedBelowZero" />
-                <ScalarProperty Name="SMAShortAboveClose" ColumnName="SMAShortAboveClose" />
-                <ScalarProperty Name="SMALongAboveClose" ColumnName="SMALongAboveClose" />
-                <ScalarProperty Name="SMAShortJustCrossedOverLong" ColumnName="SMAShortJustCrossedOverLong" />
-                <ScalarProperty Name="SMAShortGreaterThanLongForAwhile" ColumnName="SMAShortGreaterThanLongForAwhile" />
-                <ScalarProperty Name="SMALongJustCrossedOverShort" ColumnName="SMALongJustCrossedOverShort" />
-                <ScalarProperty Name="SMALongGreaterThanShortForAwhile" ColumnName="SMALongGreaterThanShortForAwhile" />
-                <ScalarProperty Name="Output_TriggeredRiseFirst" ColumnName="Output_TriggeredRiseFirst" />
-                <ScalarProperty Name="Output_TriggeredFallFirst" ColumnName="Output_TriggeredFallFirst" />
-              </ComplexTypeMapping>
-            </ResultMapping>
-          </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="GetTrainingDataset2" FunctionName="SANNET.DataModel.Store.GetTrainingDataset2">
-            <ResultMapping>
-              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTrainingDataset2_Result">
+              <ComplexTypeMapping TypeName="SANNET.DataModel.ApplicationLogSelect_Result">
                 <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="I1" ColumnName="I1" />
-                <ScalarProperty Name="I2" ColumnName="I2" />
-                <ScalarProperty Name="I3" ColumnName="I3" />
-                <ScalarProperty Name="I4" ColumnName="I4" />
-                <ScalarProperty Name="O1" ColumnName="O1" />
-                <ScalarProperty Name="O2" ColumnName="O2" />
-                <ScalarProperty Name="O3" ColumnName="O3" />
-                <ScalarProperty Name="O4" ColumnName="O4" />
+                <ScalarProperty Name="Date" ColumnName="Date" />
+                <ScalarProperty Name="Thread" ColumnName="Thread" />
+                <ScalarProperty Name="Level" ColumnName="Level" />
+                <ScalarProperty Name="Logger" ColumnName="Logger" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Exception" ColumnName="Exception" />
+                <ScalarProperty Name="Location" ColumnName="Location" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetTestingDataset" FunctionName="SANNET.DataModel.Store.GetTestingDataset">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTestingDataset_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="I_IsMACDAboveZeroLine" ColumnName="I_IsMACDAboveZeroLine" />
+                <ScalarProperty Name="I_IsStochasticOverBought" ColumnName="I_IsStochasticOverBought" />
+                <ScalarProperty Name="I_IsStochasticOverSold" ColumnName="I_IsStochasticOverSold" />
+                <ScalarProperty Name="I_IsStochasticNeitherOverBoughtOrOverSold" ColumnName="I_IsStochasticNeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsRSIOverBought" ColumnName="I_IsRSIOverBought" />
+                <ScalarProperty Name="I_IsRSIOverSold" ColumnName="I_IsRSIOverSold" />
+                <ScalarProperty Name="I_IsRSINeitherOverBoughtOrOverSold" ColumnName="I_IsRSINeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsCCIOverBought" ColumnName="I_IsCCIOverBought" />
+                <ScalarProperty Name="I_IsCCIOverSold" ColumnName="I_IsCCIOverSold" />
+                <ScalarProperty Name="I_IsCCINeitherOverBoughtOrOverSold" ColumnName="I_IsCCINeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsSMAShortGreaterThanLong" ColumnName="I_IsSMAShortGreaterThanLong" />
+                <ScalarProperty Name="I_IsEMAShortGreaterThanLong" ColumnName="I_IsEMAShortGreaterThanLong" />
+                <ScalarProperty Name="O_TriggeredRiseFirst" ColumnName="O_TriggeredRiseFirst" />
+                <ScalarProperty Name="O_TriggeredFallFirst" ColumnName="O_TriggeredFallFirst" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="GetTrainingDataset" FunctionName="SANNET.DataModel.Store.GetTrainingDataset">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="SANNET.DataModel.GetTrainingDataset_Result">
+                <ScalarProperty Name="QuoteId" ColumnName="QuoteId" />
+                <ScalarProperty Name="I_IsMACDAboveZeroLine" ColumnName="I_IsMACDAboveZeroLine" />
+                <ScalarProperty Name="I_IsStochasticOverBought" ColumnName="I_IsStochasticOverBought" />
+                <ScalarProperty Name="I_IsStochasticOverSold" ColumnName="I_IsStochasticOverSold" />
+                <ScalarProperty Name="I_IsStochasticNeitherOverBoughtOrOverSold" ColumnName="I_IsStochasticNeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsRSIOverBought" ColumnName="I_IsRSIOverBought" />
+                <ScalarProperty Name="I_IsRSIOverSold" ColumnName="I_IsRSIOverSold" />
+                <ScalarProperty Name="I_IsRSINeitherOverBoughtOrOverSold" ColumnName="I_IsRSINeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsCCIOverBought" ColumnName="I_IsCCIOverBought" />
+                <ScalarProperty Name="I_IsCCIOverSold" ColumnName="I_IsCCIOverSold" />
+                <ScalarProperty Name="I_IsCCINeitherOverBoughtOrOverSold" ColumnName="I_IsCCINeitherOverBoughtOrOverSold" />
+                <ScalarProperty Name="I_IsSMAShortGreaterThanLong" ColumnName="I_IsSMAShortGreaterThanLong" />
+                <ScalarProperty Name="I_IsEMAShortGreaterThanLong" ColumnName="I_IsEMAShortGreaterThanLong" />
+                <ScalarProperty Name="O_TriggeredRiseFirst" ColumnName="O_TriggeredRiseFirst" />
+                <ScalarProperty Name="O_TriggeredFallFirst" ColumnName="O_TriggeredFallFirst" />
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>

@@ -19,12 +19,11 @@ GO
 -- Description:	Returns the testing dataset for the Neural Network.
 -- =============================================
 CREATE PROCEDURE [dbo].[GetTestingDataset] 
-	@companyId int,
 	@quoteId int
 AS
 BEGIN
 	SELECT * 
-	FROM GetDataset_AllIndicators(@companyId, @quoteId)
+	FROM GetDataset_AllIndicators(@quoteId)
 	WHERE [QuoteId] = @quoteId
 END
 GO

@@ -21,10 +21,8 @@ namespace SANNET.DataModel
         }
     
         public int Id { get; set; }
-        public int DatasetRetrievalMethodId { get; set; }
         public int NumHiddenLayers { get; set; }
         public int NumHiddenLayerNeurons { get; set; }
-        public int NumTrainingMonths { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Prediction> Predictions { get; set; }

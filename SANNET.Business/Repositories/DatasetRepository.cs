@@ -10,21 +10,18 @@ namespace SANNET.Business.Repositories
     public interface IDatasetRepository : IDisposable
     {
         /// <summary>
-        /// Returns the METHOD 1 training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.
+        /// Returns the training dataset values for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="companyId">The id of the company to receive values from.</param>
-        /// <param name="startDate">The starting date of the returned training values.</param>
-        /// <param name="endDate">The ending date of the returned training values.</param>
-        /// <returns>Returns the computed training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
-        IEnumerable<GetTrainingDataset1_Result> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate);
+        /// <param name="quoteId">The id of the quote to recieve training values for.</param>
+        /// <returns>Returns the computed training dataset values for the <paramref name="quoteId"/>.
+        IEnumerable<GetTrainingDataset_Result> GetTrainingDataset(int quoteId);
 
         /// <summary>
-        /// Returns the Dataset1 testing dataset values for the company for the specified <paramref name="date"/>.
+        /// Returns the testing dataset values for the <paramref name="quoteId"/>..
         /// </summary>
-        /// <param name="companyId">The id of the company to receive values for.</param>
-        /// <param name="date">The date of the returned testing values.</param>
-        /// <returns>Returns the computed testing dataset values for the company for the specified <paramref name="date"/>.</returns>
-        IEnumerable<GetTestingDataset1_Result> GetTestingDataset1(int companyId, DateTime date);
+        /// <param name="quoteId">The id of the quote to recieve testing values for.</param>
+        /// <returns>Returns the computed testing dataset values for the <paramref name="quoteId"/>.
+        IEnumerable<GetTestingDataset_Result> GetTestingDataset(int quoteId);
     }
 
     [ExcludeFromCodeCoverage]
@@ -41,37 +38,31 @@ namespace SANNET.Business.Repositories
         #region IDatasetRepository<D>
 
         /// <summary>
-        /// Returns the Dataset1 training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.
+        /// Returns the training dataset values for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="companyId">The id of the company to receive values from.</param>
-        /// <param name="startDate">The starting date of the returned training values.</param>
-        /// <param name="endDate">The ending date of the returned training values.</param>
-        /// <returns>Returns the computed training dataset values for the company from the <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
-        public IEnumerable<GetTrainingDataset1_Result> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate)
+        /// <param name="quoteId">The id of the quote to recieve training values for.</param>
+        /// <returns>Returns the computed training dataset values for the <paramref name="quoteId"/>.
+        public IEnumerable<GetTrainingDataset_Result> GetTrainingDataset(int quoteId)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
 
-            return _context.ExecuteStoredProcedure<GetTrainingDataset1_Result>("GetTrainingDataset1 @companyId, @startDate, @endDate",
-                                            new SqlParameter("companyId", companyId),
-                                            new SqlParameter("startDate", startDate),
-                                            new SqlParameter("endDate", endDate));
+            return _context.ExecuteStoredProcedure<GetTrainingDataset_Result>("GetTrainingDataset @quoteId",
+                                            new SqlParameter("quoteId", quoteId));
         }
 
         /// <summary>
-        /// Returns the Dataset1 testing dataset values for the company for the specified <paramref name="date"/>.
+        /// Returns the testing dataset values for the <paramref name="quoteId"/>..
         /// </summary>
-        /// <param name="companyId">The id of the company to receive values for.</param>
-        /// <param name="date">The date of the returned testing values.</param>
-        /// <returns>Returns the computed testing dataset values for the company for the specified <paramref name="date"/>.</returns>
-        public IEnumerable<GetTestingDataset1_Result> GetTestingDataset1(int companyId, DateTime date)
+        /// <param name="quoteId">The id of the quote to recieve testing values for.</param>
+        /// <returns>Returns the computed testing dataset values for the <paramref name="quoteId"/>.
+        public IEnumerable<GetTestingDataset_Result> GetTestingDataset(int quoteId)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetRepository", "The repository has been disposed.");
 
-            return _context.ExecuteStoredProcedure<GetTestingDataset1_Result>("GetTestingDataset1 @companyId, @date",
-                                            new SqlParameter("companyId", companyId),
-                                            new SqlParameter("date", date));
+            return _context.ExecuteStoredProcedure<GetTestingDataset_Result>("GetTestingDataset @quoteId",
+                                            new SqlParameter("quoteId", quoteId));
         }
 
         #endregion

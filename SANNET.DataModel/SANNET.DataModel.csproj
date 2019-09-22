@@ -53,16 +53,13 @@
     <Compile Include="ApplicationLog.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="GetTestingDataset1_Result.cs">
+    <Compile Include="ApplicationLogSelect_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="GetTestingDataset2_Result.cs">
+    <Compile Include="GetTestingDataset_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
-    <Compile Include="GetTrainingDataset1_Result.cs">
-      <DependentUpon>SANNETContext.tt</DependentUpon>
-    </Compile>
-    <Compile Include="GetTrainingDataset2_Result.cs">
+    <Compile Include="GetTrainingDataset_Result.cs">
       <DependentUpon>SANNETContext.tt</DependentUpon>
     </Compile>
     <Compile Include="NetworkConfiguration.cs">

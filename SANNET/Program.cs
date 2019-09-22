@@ -22,13 +22,14 @@ namespace SANNET
 
             var predictionService = kernel.Get<PredictionService<Prediction, Quote, Company, NetworkConfiguration>>();
 
+            #region Manually Testing NN (Delete when satisfied with NN propogation
             //var trainingEntries = new List<INetworkTrainingIteration>();
             //trainingEntries.Add(new NetworkTrainingIteration()
             //{
             //    Inputs = new List<INetworkTrainingInput>() { new NetworkTrainingInput() { NeuronId = 0, ActivationLevel = 0.05 }, new NetworkTrainingInput() { NeuronId = 1, ActivationLevel = 0.1 } },
             //    Outputs = new List<INetworkTrainingOutput>() { new NetworkTrainingOutput() { NeuronId = 4, ExpectedActivationLevel = .01 }, new NetworkTrainingOutput() { NeuronId = 5, ActivationLevel = 0.99 } }
             //});
-            
+
             //var network = new DFFNeuralNetwork(2, 1, 2, 2);
             //var inputLayer = network.Layers.First();
             //var hiddenLayer = network.Layers.Last();
@@ -88,6 +89,7 @@ namespace SANNET
 
             //var outputs = network.ApplyInputs(trainingEntries.First().Inputs);
             //network.Train(trainingEntries);
+            #endregion 
 
             try
             {
@@ -103,7 +105,7 @@ namespace SANNET
 
                 try
                 {
-                    //predictionService.AnalyzePredictions();
+                    predictionService.AnalyzePredictions();
                     //marketService.UpdateAllCompaniesWithLatestQuotesAsync().Wait();
                 }
                 catch (AggregateException e)
@@ -111,7 +113,7 @@ namespace SANNET
                     LogRecursive(kernel.Get<ILog>(), e, "Error occured downloading stock data");
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 kernel.Get<ILog>().Error($"A fatal error occured that stopped SANNET: {e.Message} - {e.InnerException}");
             }

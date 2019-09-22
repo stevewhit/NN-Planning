@@ -1,5 +1,6 @@
 ﻿using NeuralNetwork.Generic.Datasets;
 using SANNET.Business.Repositories;
+using SANNET.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,32 +10,25 @@ namespace SANNET.Business.Services
     public interface IDatasetService : IDisposable
     {
         /// <summary>
-        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// Returns the training dataset values for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="startDate">The start date of the training dataset.</param>
-        /// <param name="endDate">The end date of the training dataset.</param>
-        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
-        IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int datasetRetrievalMethodId, int companyId, DateTime startDate, DateTime endDate);
+        /// <param name="quoteId">The id of the quote to recieve training values for.</param>
+        /// <returns>Returns the training dataset values for the <paramref name="quoteId"/>.
+        IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int quoteId);
 
         /// <summary>
-        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// Returns the network inputs for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
         /// <param name="date">The date that the network inputs should be generated for.</param>
-        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        IEnumerable<INetworkInput> GetNetworkInputs(int datasetRetrievalMethodId, int companyId, DateTime date);
+        /// <returns>Returns the network inputs for the <paramref name="quoteId"/>.
+        IEnumerable<INetworkInput> GetNetworkInputs(int quoteId);
 
         /// <summary>
-        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// Returns the network outputs for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
         /// <param name="date">The date that the network outputs should be generated for.</param>
-        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int datasetRetrievalMethodId, int companyId, DateTime date);
+        /// <returns>Returns the network outputs for the <paramref name="quoteId"/>.
+        IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int quoteId);
     }
 
     public class DatasetService : IDatasetService
@@ -50,204 +44,141 @@ namespace SANNET.Business.Services
         #region IDatasetService
 
         /// <summary>
-        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// Returns the training dataset values for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="startDate">The start date of the training dataset.</param>
-        /// <param name="endDate">The end date of the training dataset.</param>
-        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
-        public IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int datasetRetrievalMethodId, int companyId, DateTime startDate, DateTime endDate)
+        /// <param name="quoteId">The id of the quote to recieve training values for.</param>
+        /// <returns>Returns the training dataset values for the <paramref name="quoteId"/>.
+        public IEnumerable<INetworkTrainingIteration> GetTrainingDataset(int quoteId)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
-            return datasetRetrievalMethodId == 1 ? GetTrainingDataset1(companyId, startDate, endDate) :
-                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
+            var dataset = _repository.GetTrainingDataset(quoteId)?.ToList();
+
+            return ConvertToTrainingIterations(dataset);
         }
 
         /// <summary>
-        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
+        /// Converts each of the <paramref name="source"/> items to a trainingIteration.
         /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="date">The date that the network inputs should be generated for.</param>
-        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        public IEnumerable<INetworkInput> GetNetworkInputs(int datasetRetrievalMethodId, int companyId, DateTime date)
+        /// <param name="source">The source dataset that is to be converted to training iterations.</param>
+        /// <returns>Returns the converted <paramref name="source"/> items as trainingIterations.</returns>
+        private IEnumerable<INetworkTrainingIteration> ConvertToTrainingIterations(IEnumerable<GetTrainingDataset_Result> source)
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
-
-            return datasetRetrievalMethodId == 1 ? GetNetworkInputs1(companyId, date) :
-                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
-        }
-
-        /// <summary>
-        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/> using the identified <paramref name="datasetRetrievalMethodId"/>.
-        /// </summary>
-        /// <param name="datasetRetrievalMethodId">The id of which dataset method to use.</param>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="date">The date that the network outputs should be generated for.</param>
-        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        public IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int datasetRetrievalMethodId, int companyId, DateTime date)
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
-
-            return datasetRetrievalMethodId == 1 ? GetTestingDataset1(companyId, date) :
-                   throw new ArgumentException($"DatasetRetievalMethod not supported: {datasetRetrievalMethodId}.");
-        }
-
-        #region (Inner) Dataset Method 1
-
-        /// <summary>
-        /// Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.
-        /// </summary>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="startDate">The start date of the training dataset.</param>
-        /// <param name="endDate">The end date of the training dataset.</param>
-        /// <returns>Returns the training dataset for the identified <paramref name="companyId"/> from <paramref name="startDate"/> to the <paramref name="endDate"/>.</returns>
-        private IEnumerable<INetworkTrainingIteration> GetTrainingDataset1(int companyId, DateTime startDate, DateTime endDate)
-        {
-            var dataset = _repository.GetTrainingDataset1(companyId, startDate, endDate);
             var trainingIterations = new List<INetworkTrainingIteration>();
 
-            // Convert each dataset entry into a network training iteration
-            foreach (var entry in dataset)
+            if (source != null && source.Count() >= 1)
             {
-                var trainingIteration = new NetworkTrainingIteration();
+                var properties = source.First().GetType().GetProperties();
+                var inputProperties = properties.Where(p => p.Name.StartsWith("I_"));
+                var outputProperties = properties.Where(p => p.Name.StartsWith("O_"));
 
-                // RSI Short
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? 0)});
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSIShortOverBought });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSIShortOverSold });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverBought });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverSold });
+                // Convert each dataset entry into a network training iteration
+                foreach (var entry in source)
+                {
+                    var trainingIteration = new NetworkTrainingIteration();
+                    
+                    // Dynamically add all inputs
+                    foreach (var inputProperty in inputProperties)
+                    {
+                        trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = (bool)inputProperty.GetValue(entry) ? 1.0 : 0.0, Description = inputProperty.Name });
+                    }
 
-                // RSI Long
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? 0)});
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSILongOverBought });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.IsRSILongOverSold });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverBought });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverSold });
+                    // Dynamically add all outputs
+                    foreach (var outputProperty in outputProperties)
+                    {
+                        trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = (bool)outputProperty.GetValue(entry) ? 1.0 : 0.0, Description = outputProperty.Name });
+                    }
 
-                // RSI Crosses
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortJustCrossedOverLong });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSIShortGreaterThanLongForAwhile });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSILongJustCrossedOverShort });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.RSILongGreaterThanShortForAwhile });
-
-                // CCI Short
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.CCIShortJustCrossedAboveZero });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.CCIShortJustCrossedBelowZero });
-
-                // CCI Long
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.CCILongJustCrossedAboveZero });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.CCILongJustCrossedBelowZero });
-
-                // SMA Short
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMAShortAboveClose });
-
-                // SMA Long
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMALongAboveClose });
-
-                // SMA Crosses
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMAShortJustCrossedOverLong });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMAShortGreaterThanLongForAwhile });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMALongJustCrossedOverShort });
-                trainingIteration.Inputs.Add(new NetworkTrainingInput() { ActivationLevel = entry.SMALongGreaterThanShortForAwhile });
-
-                // Outputs
-                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredRiseFirst, Description = "Triggered Rise First"});
-                trainingIteration.Outputs.Add(new NetworkTrainingOutput() { ExpectedActivationLevel = entry.Output_TriggeredFallFirst, Description = "Triggered Fall First"});
-
-                trainingIterations.Add(trainingIteration);
+                    trainingIterations.Add(trainingIteration);
+                }
             }
 
             return trainingIterations;
         }
 
         /// <summary>
-        /// Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.
+        /// Returns the network inputs for the <paramref name="quoteId"/>.
         /// </summary>
-        /// <param name="companyId">The id of the company.</param>
         /// <param name="date">The date that the network inputs should be generated for.</param>
-        /// <returns>Returns the network inputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        private IEnumerable<INetworkInput> GetNetworkInputs1(int companyId, DateTime date)
+        /// <returns>Returns the network inputs for the <paramref name="quoteId"/>.
+        public IEnumerable<INetworkInput> GetNetworkInputs(int quoteId)
         {
-            var dataset = _repository.GetTrainingDataset1(companyId, date, date).ToList();
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
 
-            if (dataset.Count() > 1)
-                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
+            var dataset = _repository.GetTestingDataset(quoteId)?.ToList();
+            if (dataset?.Count() != 1)
+                throw new DataMisalignedException("Dataset should only ever return 1 entry.");
 
-            var entry = dataset.First();
-            return new List<INetworkInput>()
-            {
-                // RSI Short
-                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSIShortNormalized ?? 0)},
-                new NetworkInput() { ActivationLevel = entry.IsRSIShortOverBought },
-                new NetworkInput() { ActivationLevel = entry.IsRSIShortOverSold },
-                new NetworkInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverBought },
-                new NetworkInput() { ActivationLevel = entry.RSIShortJustCrossedIntoOverSold },
-
-                // RSI Long
-                new NetworkInput() { ActivationLevel = decimal.ToDouble(entry.RSILongNormalized ?? 0)},
-                new NetworkInput() { ActivationLevel = entry.IsRSILongOverBought },
-                new NetworkInput() { ActivationLevel = entry.IsRSILongOverSold },
-                new NetworkInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverBought },
-                new NetworkInput() { ActivationLevel = entry.RSILongJustCrossedIntoOverSold },
-
-                // RSI Crosses
-                new NetworkInput() { ActivationLevel = entry.RSIShortJustCrossedOverLong },
-                new NetworkInput() { ActivationLevel = entry.RSIShortGreaterThanLongForAwhile },
-                new NetworkInput() { ActivationLevel = entry.RSILongJustCrossedOverShort },
-                new NetworkInput() { ActivationLevel = entry.RSILongGreaterThanShortForAwhile },
-
-                // CCI Short
-                new NetworkInput() { ActivationLevel = entry.CCIShortJustCrossedAboveZero },
-                new NetworkInput() { ActivationLevel = entry.CCIShortJustCrossedBelowZero },
-
-                // CCI Long
-                new NetworkInput() { ActivationLevel = entry.CCILongJustCrossedAboveZero },
-                new NetworkInput() { ActivationLevel = entry.CCILongJustCrossedBelowZero },
-
-                // SMA Short
-                new NetworkInput() { ActivationLevel = entry.SMAShortAboveClose },
-
-                // SMA Long
-                new NetworkInput() { ActivationLevel = entry.SMALongAboveClose },
-
-                // SMA Crosses
-                new NetworkInput() { ActivationLevel = entry.SMAShortJustCrossedOverLong },
-                new NetworkInput() { ActivationLevel = entry.SMAShortGreaterThanLongForAwhile },
-                new NetworkInput() { ActivationLevel = entry.SMALongJustCrossedOverShort },
-                new NetworkInput() { ActivationLevel = entry.SMALongGreaterThanShortForAwhile }
-            };
+            return ConvertToNetworkInputs(dataset.First());
         }
 
         /// <summary>
-        /// Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.
+        /// Converts the <paramref name="source"/> item to NetworkInputs.
         /// </summary>
-        /// <param name="companyId">The id of the company.</param>
-        /// <param name="date">The date that the network outputs should be generated for.</param>
-        /// <returns>Returns the network outputs for the <paramref name="companyId"/> on the supplied <paramref name="date"/>.</returns>
-        private IEnumerable<INetworkOutput> GetTestingDataset1(int companyId, DateTime date)
+        /// <param name="source">The source dataset item.</param>
+        /// <returns>Returns the converted <paramref name="source"/> as NetworkInputs.</returns>
+        private IEnumerable<INetworkInput> ConvertToNetworkInputs(GetTestingDataset_Result source)
         {
-            var dataset = _repository.GetTestingDataset1(companyId, date).ToList();
+            var networkInputs = new List<INetworkInput>();
 
-            if (dataset.Count() > 1)
-                throw new InvalidOperationException("Returned dataset should contain no more than 1 entry.");
-
-            var entry = dataset.First();
-            return new List<INetworkOutput>()
+            if (source != null)
             {
-                // Outputs
-                new NetworkOutput() { ActivationLevel = entry.Output_TriggeredRiseFirst, Description = "Triggered Rise First" },
-                new NetworkOutput() { ActivationLevel = entry.Output_TriggeredFallFirst, Description = "Triggered Fall First" }
-            };
+                var properties = source.GetType().GetProperties();
+                var inputProperties = properties.Where(p => p.Name.StartsWith("I_"));
+
+                // Dynamically add all inputs
+                foreach (var inputProperty in inputProperties)
+                {
+                    networkInputs.Add( new NetworkInput() { ActivationLevel = (bool)inputProperty.GetValue(source) ? 1.0 : 0.0, Description = inputProperty.Name });
+                }
+            }
+
+            return networkInputs;
         }
 
-        #endregion
+        /// <summary>
+        /// Returns the network outputs for the <paramref name="quoteId"/>.
+        /// </summary>
+        /// <param name="date">The date that the network outputs should be generated for.</param>
+        /// <returns>Returns the network outputs for the <paramref name="quoteId"/>.
+        public IEnumerable<INetworkOutput> GetExpectedNetworkOutputs(int quoteId)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException("DatasetService", "The service has been disposed.");
+
+            var dataset = _repository.GetTestingDataset(quoteId)?.ToList();
+            if (dataset?.Count() != 1)
+                throw new DataMisalignedException("Dataset should only ever return 1 entry.");
+
+            return ConvertToNetworkOutputs(dataset.First());
+        }
+
+        /// <summary>
+        /// Converts the <paramref name="source"/> item to NetworkOutputs.
+        /// </summary>
+        /// <param name="source">The source dataset item.</param>
+        /// <returns>Returns the converted <paramref name="source"/> as NetworkOutputs.</returns>
+        private IEnumerable<INetworkOutput> ConvertToNetworkOutputs(GetTestingDataset_Result source)
+        {
+            var networkOutputs = new List<INetworkOutput>();
+
+            if (source != null)
+            {
+                var properties = source.GetType().GetProperties();
+                var outputProperties = properties.Where(p => p.Name.StartsWith("O_"));
+
+                // Dynamically add all outputs
+                foreach (var outputProperty in outputProperties)
+                {
+                    networkOutputs.Add(new NetworkOutput() { ActivationLevel = (bool)outputProperty.GetValue(source) ? 1.0 : 0.0, Description = outputProperty.Name });
+                }
+            }
+
+            return networkOutputs;
+        }
+        
         #endregion
         #region IDisposable
         /// <summary>

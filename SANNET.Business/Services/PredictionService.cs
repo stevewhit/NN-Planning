@@ -194,10 +194,9 @@ namespace SANNET.Business.Services
             var quotes = _quoteService.GetQuotes().ToList();
             var networkConfigs = _networkConfigurationService.GetConfigurations().ToList();
             var existingPredictions = GetPredictions().ToList();
-            //var newPredictions = new List<P>();
-            
+
             // Generate predictions for all quotes, in EACH network configuration.
-            foreach (var quote in quotes)
+            foreach (var quote in quotes.OrderByDescending(q => q.Id))
             {
                 foreach (var config in networkConfigs)
                 {
@@ -210,12 +209,19 @@ namespace SANNET.Business.Services
                             Add(generatedPrediction);
                             UpdatePredictionWithActualOutcome(generatedPrediction, quote);
                         }
-                        //newPredictions.Add(GenerateQuotePrediction(quote, config));
+                        else
+                        {
+                            Add(new P()
+                            {
+                                NetworkConfigurationId = config.Id,
+                                CompanyId = quote.CompanyId,
+                                QuoteId = quote.Id,
+                                PredictedOutcome = "Invalid or empty training dataset"
+                            });
+                        }
                     }
                 }
             }
-
-            //AddRange(newPredictions.Where(p => p != null));
         }
 
         /// <summary>
@@ -241,36 +247,29 @@ namespace SANNET.Business.Services
                 return null;
 
             // Apply test inputs to network to retrieve outputs.
-            var outputs = ApplyConfigInputsToNetwork(trainedNetwork, networkConfig, quote.CompanyId, quote.Date);
+            var outputs = ApplyConfigInputsToNetwork(trainedNetwork, networkConfig, quote);
 
             return new P()
             {
                 NetworkConfigurationId = networkConfig.Id,
                 CompanyId = quote.CompanyId,
                 QuoteId = quote.Id,
-                TrainingStartDate = GetTrainingStartDateForQuote(quote, networkConfig),
-                TrainingEndDate = GetTrainingEndDateForQuote(quote),
                 PredictedOutcome = string.Join(",", outputs.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel * 100.0, o.Description)))
             };
         }
         
         /// <summary>
-        /// Creates and returns a trained neural network using the specified <paramref name="networkConfiguration"/> over the identified training dates. 
+        /// Creates and returns a trained neural network using the specified <paramref name="networkConfiguration"/> for the <paramref name="quote"/>
         /// Note: Will return NULL if a valid training dataset could not be created.
         /// </summary>
         /// <param name="networkConfiguration">The network configuration for the neural network.</param>
-        /// <param name="companyId">The id of the company </param>
-        /// <param name="trainingStartDate"></param>
-        /// <param name="trainingEndDate"></param>
-        /// <returns>Returns a trained neural network using the specified <paramref name="networkConfiguration"/> over the identified training dates. Otherwise, NULL if a valid training dataset could not be created.</returns>
+        /// <param name="quote">The quote to create and train the network for.</param>
+        /// <returns>Returns a trained neural network using the specified <paramref name="networkConfiguration"/> for the <paramref name="quote"/>. Otherwise, NULL if a valid training dataset could not be created.</returns>
         private IDFFNeuralNetwork CreateTrainedNetwork(N networkConfiguration, Q quote)
         {
-            var trainingStartDate = GetTrainingStartDateForQuote(quote, networkConfiguration);
-            var trainingEndDate = GetTrainingEndDateForQuote(quote);
-            var trainingDatasetEntries = _datasetService.GetTrainingDataset(networkConfiguration.DatasetRetrievalMethodId, quote.CompanyId, trainingStartDate, trainingEndDate);
+            var trainingDatasetEntries = _datasetService.GetTrainingDataset(quote.Id);
 
             // Return null to indicate that a valid training dataset couldn't be created.
-            // This should only occur when the start and/or end dates are invalid.
             if (trainingDatasetEntries == null || trainingDatasetEntries.Count() == 0)
                 return null;
 
@@ -314,56 +313,28 @@ namespace SANNET.Business.Services
         /// <returns>Returns the average training cost of the final iteration.</returns>
         private IDFFNeuralNetwork TrainNetwork(IDFFNeuralNetwork network, IList<INetworkTrainingIteration> trainingDatasetEntries)
         {
-            //var dataset = trainingDatasetEntries.ToList();
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
+            var priorTrainingCost = 999.0;
+            var trainingIteration = 0;
 
-            var iterations = 0;
-            //var bestTrainingCost = double.MaxValue;
             while (true)
             {
                 trainingDatasetEntries.Shuffle();
 
                 // TODO: Implement Clone() method for NeuralNetwork and store the BEST network.
                 var trainingCost = network.Train(trainingDatasetEntries).Average(i => i.TrainingCost);
-                //if (trainingCost >= bestTrainingCost)
-                //    break;
 
-                //bestTrainingCost = trainingCost;
-                
+                Console.WriteLine($"{trainingIteration} : {trainingCost}");
 
-                Console.WriteLine($"{iterations} : {trainingCost}");
+                // Check the training cost every 500 iterations to ensure it's continuing to improve
+                if (trainingIteration % 500 == 0)
+                    if ((priorTrainingCost - trainingCost) < .01)
+                        break;
+                    else
+                        priorTrainingCost = trainingCost;
 
-                // Test each of the training entries on the network to determine if the network is trained.
-                if (iterations >= 10000 || GetIsNetworkTrained(network, trainingDatasetEntries))
-                    break;
 
-                iterations++;
+                trainingIteration++;
             }
-
-            //var inputs = trainingDatasetEntries.ToList()[5].Inputs;
-            //var dataset = trainingDatasetEntries.ToList();
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-            //dataset.AddRange(trainingDatasetEntries);
-
-            //for (int i = 0; i < 10000; i++)
-            //{
-            //    trainingDatasetEntries.Shuffle();
-            //    var cost = network.Train(trainingDatasetEntries).Average(e => e.TrainingCost);
-
-            //    //var outputs = network.ApplyInputs(inputs).ToList();
-            //}
-
-            //// Expect 0 1 1 0
-            //var outputs2 = network.ApplyInputs(inputs).ToList();
 
             return network;
         }
@@ -533,27 +504,6 @@ namespace SANNET.Business.Services
         }
 
         /// <summary>
-        /// Returns the final training date in for the <paramref name="quote"/>.
-        /// </summary>
-        /// <param name="quote">The quote that the training is applied to.</param>
-        /// <returns>Returns the final date that training should end on.</returns>
-        private DateTime GetTrainingEndDateForQuote(Q quote)
-        {
-            return quote.Date.AddDays(-1);
-        }
-
-        /// <summary>
-        /// Returns the first training date for the <paramref name="quote"/> based on the <paramref name="networkConfig"/>.
-        /// </summary>
-        /// <param name="quote">The quote that the training is applied to.</param>
-        /// <param name="networkConfig">The network configuration that indicates how long to train for.</param>
-        /// <returns>Returns the start date that training should begin on.</returns>
-        private DateTime GetTrainingStartDateForQuote(Q quote, N networkConfig)
-        {
-            return quote.Date.AddDays(-1).AddMonths(-1 * networkConfig.NumTrainingMonths);
-        }
-
-        /// <summary>
         /// Fetches and applies the necessary network inputs to the network based on the identified network configuration.
         /// </summary>
         /// <param name="network">The neural network that the inputs will be applied to.</param>
@@ -561,11 +511,11 @@ namespace SANNET.Business.Services
         /// <param name="companyId">The id of the company that the inputs are chosen for.</param>
         /// <param name="testDate">The date of the calculated inputs that will be applied to the <paramref name="network"/>.</param>
         /// <returns>Returns the network outputs after the config inputs have been applied.</returns>
-        private IEnumerable<INetworkOutput> ApplyConfigInputsToNetwork(IDFFNeuralNetwork network, N networkConfig, int companyId, DateTime testDate)
+        private IEnumerable<INetworkOutput> ApplyConfigInputsToNetwork(IDFFNeuralNetwork network, N networkConfig, Q quote)
         {
             var networkInputLayer = network.Layers?.OfType<IInputLayer>().First();
             var inputNeurons = networkInputLayer.Neurons?.OfType<IInputNeuron>().ToList();
-            var networkInputs = _datasetService.GetNetworkInputs(networkConfig.DatasetRetrievalMethodId, companyId, testDate);
+            var networkInputs = _datasetService.GetNetworkInputs(quote.Id);
 
             MapInputsToInputNeurons(inputNeurons, networkInputs);
 
@@ -615,7 +565,7 @@ namespace SANNET.Business.Services
             if (quote == null)
                 throw new ArgumentNullException("quote");
 
-            var actualOutcome = _datasetService.GetExpectedNetworkOutputs(prediction.NetworkConfiguration.DatasetRetrievalMethodId, quote.CompanyId, quote.Date);
+            var actualOutcome = _datasetService.GetExpectedNetworkOutputs(quote.Id);
 
             prediction.ActualOutcome = string.Join(",", actualOutcome.Select(o => string.Format(PREDICTION_DESCRIPTION_FORMAT, o.ActivationLevel * 100.0, o.Description)));
             Update(prediction);

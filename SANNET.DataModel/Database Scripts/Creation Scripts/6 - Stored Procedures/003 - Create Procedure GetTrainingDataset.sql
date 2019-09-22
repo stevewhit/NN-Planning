@@ -19,12 +19,11 @@ GO
 -- Description:	Returns the training dataset for the Neural Network.
 -- =============================================
 CREATE PROCEDURE [dbo].[GetTrainingDataset] 
-	@companyId int,
 	@quoteId int
 AS
 BEGIN
 	SELECT * 
-	FROM GetDataset_AllIndicators(@companyId, @quoteId)
+	FROM GetDataset_AllIndicators(@quoteId)
 	WHERE [QuoteId] < @quoteId
 END
 GO
